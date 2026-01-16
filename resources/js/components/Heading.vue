@@ -2,13 +2,15 @@
 interface Props {
     title: string;
     description?: string;
+    hasClass?: boolean;
+    class?: string;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 </script>
 
 <template>
-    <div class="mb-8 space-y-0.5">
+    <div :class="hasClass === true ? props.class : 'mb-8 space-y-0.5'">
         <h2 class="text-xl font-semibold tracking-tight">{{ title }}</h2>
         <p v-if="description" class="text-sm text-muted-foreground">
             {{ description }}

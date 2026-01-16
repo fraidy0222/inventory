@@ -1,14 +1,7 @@
 import DropdownAction from '@/components/usuarios/DataTableDropDown.vue';
+import { type User } from '@/types';
 import { ColumnDef } from '@tanstack/vue-table';
 import { h } from 'vue';
-
-interface User {
-    id: number;
-    name: string;
-    email: string;
-    created_at: string;
-    email_verified_at: string | null;
-}
 
 export const columns: ColumnDef<User>[] = [
     {
@@ -65,5 +58,3 @@ export const columns: ColumnDef<User>[] = [
         },
     },
 ];
-
-export default User;

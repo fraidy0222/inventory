@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\User\UserCreateRequest;
+use App\Http\Requests\User\UserUpdateRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -13,7 +15,7 @@ class UsersController extends Controller
      */
     public function index()
     {
-        return Inertia::render('user/index', [
+        return Inertia::render('usuarios/index', [
             'users' => User::all(),
         ]);
     }
@@ -23,15 +25,16 @@ class UsersController extends Controller
      */
     public function create()
     {
-        //
+        return Inertia::render('usuarios/create');
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(UserCreateRequest $request)
     {
-        //
+        User::create($request->validated());
+        return redirect()->route('usuarios.index');
     }
 
     /**
@@ -39,7 +42,9 @@ class UsersController extends Controller
      */
     public function show(User $user)
     {
-        //
+        return Inertia::render('usuarios/show', [
+            'user' => $user,
+        ]);
     }
 
     /**
@@ -47,15 +52,18 @@ class UsersController extends Controller
      */
     public function edit(User $user)
     {
-        //
+        return Inertia::render('usuarios/edit', [
+            'user' => $user,
+        ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, User $user)
+    public function update(UserUpdateRequest $request, User $user)
     {
-        //
+        $user->update($request->validated());
+        return redirect()->route('users.index');
     }
 
     /**
@@ -63,6 +71,7 @@ class UsersController extends Controller
      */
     public function destroy(User $user)
     {
-        //
+        $user->delete();
+        return redirect()->route('users.index');
     }
 }

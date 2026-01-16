@@ -50,28 +50,34 @@ class UsersController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(User $user)
+    public function edit(User $usuario)
     {
         return Inertia::render('usuarios/edit', [
-            'user' => $user,
+            'usuario' => $usuario,
         ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UserUpdateRequest $request, User $user)
+    public function update(UserUpdateRequest $request, User $usuario)
     {
-        $user->update($request->validated());
-        return redirect()->route('users.index');
+        $usuario->update([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => $request->password ? $request->password : $usuario->password,
+            'role' => $request->role,
+            'is_active' => $request->is_active,
+        ]);
+        return to_route('usuarios.index');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(User $user)
+    public function destroy(User $usuario)
     {
-        $user->delete();
-        return redirect()->route('users.index');
+        $usuario->delete();
+        return to_route('usuarios.index');
     }
 }

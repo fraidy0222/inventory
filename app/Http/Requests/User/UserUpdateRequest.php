@@ -27,4 +27,11 @@ class UserUpdateRequest extends FormRequest
             'password' => 'nullable',
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+
+        ];
+    }
 }

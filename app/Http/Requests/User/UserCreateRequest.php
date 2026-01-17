@@ -26,7 +26,7 @@ class UserCreateRequest extends FormRequest
             'email' => 'required|email|max:150|unique:users',
             'password' => 'required|string|min:8|max:255|confirmed',
             'role' => 'required|string|in:empleado,admin,supervisor',
-            'is_active' => 'required',
+            'is_active' => 'nullable|boolean',
         ];
     }
 
@@ -45,6 +45,7 @@ class UserCreateRequest extends FormRequest
             'password.confirmed' => 'Las contraseñas no coinciden',
             'role.required' => 'El rol es requerido',
             'role.in' => 'El rol no es válido',
+            'is_active.boolean' => 'El estado debe ser un booleano',
         ];
     }
 }

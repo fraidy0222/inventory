@@ -26,15 +26,15 @@ export const columns: ColumnDef<User>[] = [
             return row.original.email;
         },
     },
-    {
-        accessorKey: 'email_verified_at',
-        header: 'Verificado',
-        cell: ({ row }) => {
-            return row.original.email_verified_at
-                ? new Date(row.original.email_verified_at).toLocaleDateString()
-                : 'No verificado';
-        },
-    },
+    // {
+    //     accessorKey: 'email_verified_at',
+    //     header: 'Verificado',
+    //     cell: ({ row }) => {
+    //         return row.original.email_verified_at
+    //             ? new Date(row.original.email_verified_at).toLocaleDateString()
+    //             : 'No verificado';
+    //     },
+    // },
     {
         accessorKey: 'created_at',
         header: 'Creado',
@@ -46,7 +46,11 @@ export const columns: ColumnDef<User>[] = [
         accessorKey: 'role',
         header: 'Rol',
         cell: ({ row }) => {
-            return h('div', { class: 'text-gray-300 font-semibold uppercase text-xs' }, row.original.role);
+            return h(
+                'div',
+                { class: 'text-gray-300 font-semibold uppercase text-xs' },
+                row.original.role,
+            );
         },
     },
     {
@@ -54,11 +58,16 @@ export const columns: ColumnDef<User>[] = [
         header: 'Estado',
         cell: ({ row }) => {
             const isActive = row.original.is_active;
-            return h(isActive ? CircleCheck : X, {
-                class: isActive ? 'text-green-500 w-5 h-5' : 'text-red-500 w-5 h-5',
-            });
+            return h('div', { class: 'flex items-center gap-2' }, [
+                h(isActive ? CircleCheck : X, {
+                    class: isActive
+                        ? 'text-green-500 w-5 h-5'
+                        : 'text-red-500 w-5 h-5',
+                }),
+                h('span', isActive ? 'Activo' : 'Inactivo'),
+            ]);
         },
-    },  
+    },
 
     {
         id: 'actions',

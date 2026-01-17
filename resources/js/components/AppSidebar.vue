@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { index } from '@/actions/App/Http/Controllers/UsersController';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -13,21 +12,34 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import productos from '@/routes/productos';
+import tiendas from '@/routes/tiendas';
+import usuarios from '@/routes/usuarios';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { LayoutGrid, Users } from 'lucide-vue-next';
+import { LayoutGrid, ShoppingBasket, Store, Users } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Inicio',
         href: dashboard(),
         icon: LayoutGrid,
     },
     {
         title: 'Usuarios',
-        href: index(),
+        href: usuarios.index().url,
         icon: Users,
+    },
+    {
+        title: 'Tiendas',
+        href: tiendas.index().url,
+        icon: Store,
+    },
+    {
+        title: 'Productos',
+        href: productos.index().url,
+        icon: ShoppingBasket,
     },
 ];
 

@@ -24,7 +24,7 @@ export type AppPageProps<
     auth: Auth;
     sidebarOpen: boolean;
     [key: string]: unknown;
-}
+};
 
 export interface User {
     id: number;
@@ -39,4 +39,44 @@ export interface User {
     [key: string]: unknown; // This allows for additional properties...
 }
 
+export interface Tienda {
+    id: number;
+    nombre: string;
+    is_active: boolean;
+    updated_at: string;
+    created_at: string;
+}
+
+export interface Producto {
+    id: number;
+    nombre: string;
+    descripcion: string | null;
+    categoria: string | null;
+    costo_promedio: number;
+    precio_venta: number;
+    activo: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
 export type BreadcrumbItemType = BreadcrumbItem;
+
+export interface PaginatedData<T> {
+    data: T[];
+    current_page: number;
+    first_page_url: string;
+    from: number;
+    last_page: number;
+    last_page_url: string;
+    links: {
+        url: string | null;
+        label: string;
+        active: boolean;
+    }[];
+    next_page_url: string | null;
+    path: string;
+    per_page: number;
+    prev_page_url: string | null;
+    to: number;
+    total: number;
+}

@@ -13,10 +13,31 @@ class UsersController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
+        $perPage = $request->input('per_page', 10);
+        $search = $request->input('search', '');
+
+        // Build query
+        $query = User::query();
+
+        // Apply search filter
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // Handle "all" records option
+        if ($perPage == -1) {
+            $totalUsers = $query->count();
+            $perPage = $totalUsers > 0 ? $totalUsers : 10;
+        }
+
         return Inertia::render('usuarios/index', [
-            'users' => User::all(),
+            'users' => $query->paginate($perPage)->appends(['search' => $search, 'per_page' => $perPage]),
+            'search' => $search,
         ]);
     }
 

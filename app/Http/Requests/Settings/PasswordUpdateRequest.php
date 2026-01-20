@@ -20,4 +20,14 @@ class PasswordUpdateRequest extends FormRequest
             'password' => ['required', Password::defaults(), 'confirmed'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'current_password.required' => 'Por favor, ingresa tu contraseña actual.',
+            'current_password.current_password' => 'La contraseña actual no coincide.',
+            'password.required' => 'Por favor, ingresa una nueva contraseña.',
+            'password.confirmed' => 'Las contraseñas no coinciden.',
+        ];
+    }
 }

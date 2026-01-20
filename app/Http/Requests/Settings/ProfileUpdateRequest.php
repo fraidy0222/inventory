@@ -28,4 +28,14 @@ class ProfileUpdateRequest extends FormRequest
             ],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'El nombre es requerido',
+            'name.max' => 'El nombre no puede tener más de 255 caracteres',
+            'email.required' => 'El correo es requerido',
+            'email.email' => 'El correo tiene que ser válido',
+        ];
+    }
 }

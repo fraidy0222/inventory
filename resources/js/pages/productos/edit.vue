@@ -6,81 +6,130 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/AppLayout.vue';
-import tiendas from '@/routes/tiendas';
-import { Tienda, type BreadcrumbItem } from '@/types';
+import productos from '@/routes/productos';
+import type { BreadcrumbItem, Producto } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 
-const props = defineProps<{ tienda: Tienda }>();
+const props = defineProps<{ producto: Producto }>();
+
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Tiendas',
-        href: tiendas.index().url,
+        title: 'Productos',
+        href: productos.index().url,
     },
     {
-        title: 'Editar Tienda',
-        href: tiendas.edit(props.tienda.id).url,
+        title: 'Editar Producto',
+        href: productos.edit(props.producto.id).url,
     },
 ];
 
 const isActive = ref(true);
 
 const form = useForm({
-    nombre: props.tienda.nombre,
-    is_active: props.tienda.is_active,
+    nombre: props.producto.nombre,
+    descripcion: props.producto.descripcion || '',
+    categoria: props.producto.categoria || '',
+    costo_promedio: props.producto.costo_promedio,
+    precio_venta: props.producto.precio_venta,
+    activo: props.producto.activo,
 });
 
 // Sincronizar valores
 watch(isActive, (newValue) => {
-    form.is_active = newValue;
+    form.activo = newValue;
 });
 
 // O manejar el cambio manualmente
 const handleCheckboxChange = (checked: boolean) => {
-    form.is_active = checked;
+    form.activo = checked;
     isActive.value = checked;
 };
 
-const toggleCheckbox = () => {
-    form.is_active = !form.is_active;
-};
-
-function update() {
-    form.put('/tiendas/' + props.tienda.id, {
+const submit = () => {
+    form.put(productos.update(props.producto.id).url, {
         onSuccess: () => {
-            toast.success('Tienda editada exitosamente');
+            toast.success('Producto editado exitosamente');
         },
     });
-}
+};
 </script>
 
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
-        <Head title="Editar Tienda" />
+        <Head title="Editar Producto" />
 
         <div class="container mx-auto px-4 py-10">
             <Card class="w-full">
                 <CardHeader>
-                    <CardTitle>Editar Tienda</CardTitle>
+                    <CardTitle>Editar Producto</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <form class="flex flex-col gap-6" @submit.prevent="update">
+                    <form class="flex flex-col gap-6" @submit.prevent="submit">
                         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div class="grid gap-2">
                                 <Label for="nombre">Nombre</Label>
                                 <Input
                                     id="nombre"
-                                    type="nombre"
+                                    type="string"
                                     v-model="form.nombre"
                                     name="nombre"
                                     autofocus
                                     :tabindex="1"
                                     autocomplete="nombre"
-                                    placeholder="Nombre de la tienda"
+                                    placeholder="Nombre del producto"
                                 />
                                 <InputError :message="form.errors.nombre" />
+                            </div>
+
+                            <div class="grid gap-2">
+                                <Label for="categoria">Categoría</Label>
+                                <Input
+                                    id="categoria"
+                                    type="text"
+                                    v-model="form.categoria"
+                                    name="categoria"
+                                    :tabindex="2"
+                                    autocomplete="categoria"
+                                    placeholder="Categoría del producto"
+                                    maxlength="100"
+                                />
+                                <InputError :message="form.errors.categoria" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="nombre">Costo Promedio</Label>
+                                <Input
+                                    id="costo_promedio"
+                                    type="number"
+                                    v-model="form.costo_promedio"
+                                    autofocus
+                                    :tabindex="1"
+                                    name="costo_promedio"
+                                    step="0.01"
+                                    placeholder="Costo promedio del producto"
+                                />
+                                <InputError
+                                    :message="form.errors.costo_promedio"
+                                />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="nombre">Precio de Venta</Label>
+                                <Input
+                                    id="precio_venta"
+                                    type="number"
+                                    v-model="form.precio_venta"
+                                    autofocus
+                                    :tabindex="1"
+                                    name="precio_venta"
+                                    step="0.01"
+                                    placeholder="Precio de venta del producto"
+                                />
+                                <InputError
+                                    :message="form.errors.precio_venta"
+                                />
                             </div>
 
                             <div class="grid gap-2">
@@ -90,9 +139,9 @@ function update() {
                                     >
                                         <Checkbox
                                             id="toggle-2"
-                                            name="is_active"
+                                            name="activo"
                                             value="1"
-                                            v-model="form.is_active"
+                                            v-model="form.activo"
                                             @update:checked="
                                                 handleCheckboxChange
                                             "
@@ -103,7 +152,7 @@ function update() {
                                                 class="text-sm leading-none font-medium"
                                             >
                                                 {{
-                                                    form.is_active
+                                                    form.activo
                                                         ? 'Activa'
                                                         : 'Inactiva'
                                                 }}
@@ -112,16 +161,31 @@ function update() {
                                                 class="text-sm text-muted-foreground"
                                             >
                                                 {{
-                                                    form.is_active
-                                                        ? 'La tienda está activa'
-                                                        : 'La tienda está inactiva'
+                                                    form.activo
+                                                        ? 'El producto está activo en el sistema'
+                                                        : 'El producto está inactivo en el sistema'
                                                 }}
                                             </p>
                                         </div>
                                     </Label>
                                 </div>
-                                <InputError :message="form.errors.is_active" />
+                                <InputError :message="form.errors.activo" />
                             </div>
+                        </div>
+                        <div class="grid gap-2">
+                            <Label for="nombre">Descripción</Label>
+                            <Textarea
+                                id="nombre"
+                                type="nombre"
+                                v-model="form.descripcion"
+                                name="nombre"
+                                autofocus
+                                :tabindex="1"
+                                autocomplete="descripcion"
+                                placeholder="Descripción del producto"
+                                maxlength="100"
+                            />
+                            <InputError :message="form.errors.descripcion" />
                         </div>
                         <div class="flex justify-end gap-2">
                             <Button
@@ -132,7 +196,7 @@ function update() {
                                 :tabindex="4"
                                 data-test="cancel-button"
                             >
-                                <Link :href="tiendas.index().url">
+                                <Link :href="productos.index().url">
                                     Cancelar
                                 </Link>
                             </Button>

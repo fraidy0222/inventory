@@ -19,12 +19,12 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import productos from '@/routes/productos';
-import { Link, router } from '@inertiajs/vue3';
+import { router } from '@inertiajs/vue3';
 import { MoreHorizontal, Pencil, Trash } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { toast } from 'vue-sonner';
 
-defineProps<{
+const props = defineProps<{
     producto: {
         id: number;
         nombre: string;
@@ -46,6 +46,10 @@ const destroy = (id: number) => {
             toast.error('Error al eliminar el producto');
         },
     });
+};
+
+const edit = () => {
+    return router.visit(productos.edit(props.producto.id).url);
 };
 </script>
 
@@ -84,10 +88,10 @@ const destroy = (id: number) => {
         <DropdownMenuContent align="end">
             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem @click="edit">
                 <Pencil class="h-3 w-3" />
-                <Link :href="productos.edit(producto.id).url">Editar</Link>
-                <!-- Editar -->
+                <!-- <Link :href="productos.edit(producto.id).url">Editar</Link> -->
+                Editar
             </DropdownMenuItem>
             <DropdownMenuItem @click="showDialog">
                 <Trash class="h-3 w-3" />

@@ -72,7 +72,7 @@ const submit = () => {
                                 <Label for="nombre">Nombre</Label>
                                 <Input
                                     id="nombre"
-                                    type="nombre"
+                                    type="string"
                                     v-model="form.nombre"
                                     name="nombre"
                                     autofocus
@@ -84,29 +84,29 @@ const submit = () => {
                             </div>
 
                             <div class="grid gap-2">
-                                <Label for="nombre">Categoría</Label>
+                                <Label for="categoria">Categoría</Label>
                                 <Input
-                                    id="nombre"
-                                    type="nombre"
+                                    id="categoria"
+                                    type="text"
                                     v-model="form.categoria"
-                                    name="nombre"
-                                    autofocus
-                                    :tabindex="1"
+                                    name="categoria"
+                                    :tabindex="2"
                                     autocomplete="categoria"
                                     placeholder="Categoría del producto"
+                                    maxlength="100"
                                 />
                                 <InputError :message="form.errors.categoria" />
                             </div>
                             <div class="grid gap-2">
                                 <Label for="nombre">Costo Promedio</Label>
                                 <Input
-                                    id="nombre"
-                                    type="nombre"
+                                    id="costo_promedio"
+                                    type="number"
                                     v-model="form.costo_promedio"
-                                    name="nombre"
                                     autofocus
-                                    :tabindex="1"
-                                    autocomplete="costo_promedio"
+                                    :tabindex="2"
+                                    name="costo_promedio"
+                                    step="0.01"
                                     placeholder="Costo promedio del producto"
                                 />
                                 <InputError
@@ -116,13 +116,13 @@ const submit = () => {
                             <div class="grid gap-2">
                                 <Label for="nombre">Precio de Venta</Label>
                                 <Input
-                                    id="nombre"
-                                    type="nombre"
+                                    id="precio_venta"
+                                    type="number"
                                     v-model="form.precio_venta"
-                                    name="nombre"
                                     autofocus
-                                    :tabindex="1"
-                                    autocomplete="precio_venta"
+                                    :tabindex="2"
+                                    name="precio_venta"
+                                    step="0.01"
                                     placeholder="Precio de venta del producto"
                                 />
                                 <InputError
@@ -140,6 +140,7 @@ const submit = () => {
                                             name="activo"
                                             value="1"
                                             v-model="form.activo"
+                                            :tabindex="2"
                                             @update:checked="
                                                 handleCheckboxChange
                                             "

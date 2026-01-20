@@ -90,7 +90,7 @@ const breadcrumbs: BreadcrumbItem[] = [
         <div class="container mx-auto px-4 py-6">
             <div class="mb-8 flex items-center justify-between">
                 <Heading
-                    title="Listado de Tiendas"
+                    title="Tiendas"
                     :has-class="true"
                     class="mb-0 space-y-0"
                 />

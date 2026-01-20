@@ -26,22 +26,24 @@ const passwordInput = useTemplateRef('passwordInput');
 <template>
     <div class="space-y-6">
         <HeadingSmall
-            title="Delete account"
+            title="Eliminar Cuenta"
             description="Delete your account and all of its resources"
         />
         <div
             class="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10"
         >
             <div class="relative space-y-0.5 text-red-600 dark:text-red-100">
-                <p class="font-medium">Warning</p>
+                <p class="font-medium">Precuación</p>
                 <p class="text-sm">
-                    Please proceed with caution, this cannot be undone.
+                    Por favor proceda con cuidado, esta acción no puede
+                    deshacerse
+                    <!-- Please proceed with caution, this cannot be undone. -->
                 </p>
             </div>
             <Dialog>
                 <DialogTrigger as-child>
                     <Button variant="destructive" data-test="delete-user-button"
-                        >Delete account</Button
+                        >Eliminar cuenta</Button
                     >
                 </DialogTrigger>
                 <DialogContent>

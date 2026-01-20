@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import UsersController from '@/actions/App/Http/Controllers/UsersController';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -10,21 +19,9 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import usuarios from '@/routes/usuarios';
-import { Link } from '@inertiajs/vue3';
+import { router } from '@inertiajs/vue3';
 import { MoreHorizontal, Pencil, Trash } from 'lucide-vue-next';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
 import { ref } from 'vue';
-import { router } from '@inertiajs/vue3'
 import { toast } from 'vue-sonner';
 
 const props = defineProps<{
@@ -38,37 +35,49 @@ const deleteDialog = ref(false);
 
 const showDialog = () => {
     deleteDialog.value = !deleteDialog.value;
-}
+};
 
 const destroy = (id: number) => {
-   router.delete(usuarios.destroy(id).url, {
-    onSuccess: () => {
-        toast.success('Usuario eliminado exitosamente');
-    },
-    onError: () => {
-        toast.error('Error al eliminar el usuario');
-    }
-   })
-}
+    router.delete(usuarios.destroy(id).url, {
+        onSuccess: () => {
+            toast.success('Usuario eliminado exitosamente');
+        },
+        onError: () => {
+            toast.error('Error al eliminar el usuario');
+        },
+    });
+};
+
+const edit = () => {
+    return router.visit(usuarios.edit(props.user.id).url);
+};
 </script>
 
 <template>
     <AlertDialog v-model:open="deleteDialog">
         <!-- <AlertDialogTrigger>Open</AlertDialogTrigger> -->
         <AlertDialogContent>
-        <AlertDialogHeader>
-            <AlertDialogTitle>Estás seguro de eliminar este usuario {{ user.name }} ?</AlertDialogTitle>
-            <AlertDialogDescription>
-            Esta acción no puede ser deshecha. Esta acción eliminará permanentemente el usuario
-            y eliminará sus datos de nuestros servidores.
-            </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction @click="destroy(user.id)" class="text-red-500 bg-red-500/10 hover:bg-red-500/20">Eliminar</AlertDialogAction>
-        </AlertDialogFooter>
+            <AlertDialogHeader>
+                <AlertDialogTitle
+                    >Estás seguro de eliminar este usuario
+                    {{ user.name }} ?</AlertDialogTitle
+                >
+                <AlertDialogDescription>
+                    Esta acción no puede ser deshecha. Esta acción eliminará
+                    permanentemente el usuario y eliminará sus datos de nuestros
+                    servidores.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                    @click="destroy(user.id)"
+                    class="bg-red-500/10 text-red-500 hover:bg-red-500/20"
+                    >Eliminar</AlertDialogAction
+                >
+            </AlertDialogFooter>
         </AlertDialogContent>
-  </AlertDialog>
+    </AlertDialog>
 
     <DropdownMenu>
         <DropdownMenuTrigger as-child>
@@ -80,10 +89,10 @@ const destroy = (id: number) => {
         <DropdownMenuContent align="end">
             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem @click="edit">
                 <Pencil class="h-3 w-3" />
-                <Link :href="UsersController.edit(user.id).url">Editar</Link>
-                <!-- Editar -->
+                <!-- <Link :href="UsersController.edit(user.id).url">Editar</Link> -->
+                Editar
             </DropdownMenuItem>
             <DropdownMenuItem @click="showDialog">
                 <Trash class="h-3 w-3" />

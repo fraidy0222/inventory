@@ -23,6 +23,7 @@ import { Form, Head, Link, useForm } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 
 const props = defineProps<{ usuario: User }>();
+
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Usuarios',
@@ -174,7 +175,7 @@ const handleCheckboxChange = (checked: boolean) => {
                                             id="toggle-2"
                                             name="is_active"
                                             value="1"
-                                            v-model="form.is_active"
+                                            :default-value="form.is_active"
                                             @update:checked="
                                                 handleCheckboxChange
                                             "

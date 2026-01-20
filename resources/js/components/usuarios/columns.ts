@@ -1,7 +1,7 @@
+import { Badge } from '@/components/ui/badge';
 import DropdownAction from '@/components/usuarios/DataTableDropDown.vue';
 import { type User } from '@/types';
 import { ColumnDef } from '@tanstack/vue-table';
-import { CircleCheck, X } from 'lucide-vue-next';
 import { h } from 'vue';
 
 export const columns: ColumnDef<User>[] = [
@@ -48,7 +48,9 @@ export const columns: ColumnDef<User>[] = [
         cell: ({ row }) => {
             return h(
                 'div',
-                { class: 'text-gray-300 font-semibold uppercase text-xs' },
+                {
+                    class: 'uppercase text-[12px]',
+                },
                 row.original.role,
             );
         },
@@ -57,15 +59,12 @@ export const columns: ColumnDef<User>[] = [
         accessorKey: 'is_active',
         header: 'Estado',
         cell: ({ row }) => {
-            const isActive = row.original.is_active;
-            return h('div', { class: 'flex items-center gap-2' }, [
-                h(isActive ? CircleCheck : X, {
-                    class: isActive
-                        ? 'text-green-500 w-5 h-5'
-                        : 'text-red-500 w-5 h-5',
-                }),
-                h('span', isActive ? 'Activo' : 'Inactivo'),
-            ]);
+            const activo = row.getValue('is_active') as boolean;
+            return h(
+                Badge,
+                { variant: activo ? 'default' : 'secondary' },
+                () => (activo ? 'Activo' : 'Inactivo'),
+            );
         },
     },
 

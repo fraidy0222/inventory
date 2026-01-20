@@ -1,18 +1,8 @@
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import productos from '@/routes/productos';
 import { Producto } from '@/types';
-import { Link, router } from '@inertiajs/vue3';
 import { ColumnDef } from '@tanstack/vue-table';
-import { MoreHorizontal, Pencil, Trash } from 'lucide-vue-next';
 import { h } from 'vue';
+import DropdownAction from './DataTableDropDown.vue';
 
 export const columns: ColumnDef<Producto>[] = [
     {
@@ -46,6 +36,12 @@ export const columns: ColumnDef<Producto>[] = [
             return `$${precio.toFixed(2)}`;
         },
     },
+
+    {
+        accessorKey: 'descripcion',
+        header: 'Descripción',
+    },
+
     {
         accessorKey: 'activo',
         header: 'Estado',
@@ -60,100 +56,16 @@ export const columns: ColumnDef<Producto>[] = [
     },
     {
         id: 'actions',
+        enableHiding: false,
         cell: ({ row }) => {
             const producto = row.original;
 
             return h(
-                DropdownMenu,
-                {},
-                {
-                    default: () => [
-                        h(
-                            DropdownMenuTrigger,
-                            { asChild: true },
-                            {
-                                default: () =>
-                                    h(
-                                        Button,
-                                        {
-                                            variant: 'ghost',
-                                            class: 'h-8 w-8 p-0',
-                                        },
-                                        {
-                                            default: () => [
-                                                h(
-                                                    'span',
-                                                    { class: 'sr-only' },
-                                                    'Abrir menú',
-                                                ),
-                                                h(MoreHorizontal, {
-                                                    class: 'h-4 w-4',
-                                                }),
-                                            ],
-                                        },
-                                    ),
-                            },
-                        ),
-                        h(
-                            DropdownMenuContent,
-                            { align: 'end' },
-                            {
-                                default: () => [
-                                    h(DropdownMenuLabel, {}, () => 'Acciones'),
-                                    h(
-                                        DropdownMenuItem,
-                                        { asChild: true },
-                                        {
-                                            default: () =>
-                                                h(
-                                                    Link,
-                                                    {
-                                                        href: productos.edit(
-                                                            producto.id,
-                                                        ),
-                                                        class: 'flex items-center gap-2',
-                                                    },
-                                                    {
-                                                        default: () => [
-                                                            h(Pencil, {
-                                                                class: 'h-4 w-4',
-                                                            }),
-                                                            'Editar',
-                                                        ],
-                                                    },
-                                                ),
-                                        },
-                                    ),
-                                    h(
-                                        DropdownMenuItem,
-                                        {
-                                            onClick: () => {
-                                                if (
-                                                    confirm(
-                                                        '¿Está seguro de eliminar este producto?',
-                                                    )
-                                                ) {
-                                                    router.delete(
-                                                        productos.destroy(
-                                                            producto.id,
-                                                        ),
-                                                    );
-                                                }
-                                            },
-                                            class: 'flex items-center gap-2 text-destructive',
-                                        },
-                                        {
-                                            default: () => [
-                                                h(Trash, { class: 'h-4 w-4' }),
-                                                'Eliminar',
-                                            ],
-                                        },
-                                    ),
-                                ],
-                            },
-                        ),
-                    ],
-                },
+                'div',
+                { class: 'relative' },
+                h(DropdownAction, {
+                    producto,
+                }),
             );
         },
     },

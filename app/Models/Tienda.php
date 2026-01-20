@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Tienda extends Model
 {
@@ -27,5 +28,10 @@ class Tienda extends Model
         return [
             'is_active' => 'boolean',
         ];
+    }
+
+    public function inventarioTiendas(): HasMany
+    {
+        return $this->hasMany(InventarioTienda::class);
     }
 }

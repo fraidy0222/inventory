@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Producto extends Model
 {
@@ -23,4 +24,9 @@ class Producto extends Model
         'precio_venta' => 'decimal:2',
         'activo' => 'boolean',
     ];
+
+    public function inventarioTiendas(): HasMany
+    {
+        return $this->hasMany(InventarioTienda::class);
+    }
 }

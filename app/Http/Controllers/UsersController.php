@@ -88,7 +88,7 @@ class UsersController extends Controller
             'email' => $request->email,
             'password' => $request->password ? $request->password : $usuario->password,
             'role' => $request->role,
-            'is_active' => $request->is_active,
+            'is_active' => $request->is_active ? $request->is_active : $usuario->is_active,
         ]);
         return to_route('usuarios.index');
     }

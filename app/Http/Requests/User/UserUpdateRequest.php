@@ -22,7 +22,7 @@ class UserUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:users,name,' . $this->route('usuario')->id,
             'email' => 'required|email|max:150|unique:users,email,' . $this->route('usuario')->id,
             'password' => 'nullable|string|min:8|max:255',
             'role' => 'required|string|in:empleado,admin,supervisor',
@@ -35,6 +35,7 @@ class UserUpdateRequest extends FormRequest
         return [
             'name.required' => 'El nombre es requerido',
             'name.max' => 'El nombre no puede tener más de 255 caracteres',
+            'name.unique' => 'El nombre ya está en uso',
             'email.required' => 'El correo electrónico es requerido',
             'email.unique' => 'El correo electrónico ya está en uso',
             'email.max' => 'El correo no puede tener más de 150 caracteres',

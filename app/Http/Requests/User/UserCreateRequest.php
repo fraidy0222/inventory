@@ -22,8 +22,8 @@ class UserCreateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:150|unique:users',
+            'name' => 'required|string|max:255|unique:users,name',
+            'email' => 'required|email|max:150|unique:users,email',
             'password' => 'required|string|min:8|max:255|confirmed',
             'role' => 'required|string|in:empleado,admin,supervisor',
             'is_active' => 'nullable|boolean',
@@ -36,6 +36,7 @@ class UserCreateRequest extends FormRequest
         return [
             'name.required' => 'El nombre es requerido',
             'name.max' => 'El nombre no puede tener más de 255 caracteres',
+            'name.unique' => 'El nombre ya está en uso',
             'email.required' => 'El correo electrónico es requerido',
             'email.unique' => 'El correo electrónico ya está en uso',
             'email.max' => 'El correo no puede tener más de 150 caracteres',

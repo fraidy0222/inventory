@@ -40,7 +40,7 @@ defineProps<{
             class="flex flex-col gap-6"
         >
             <div class="grid gap-6">
-                <!-- <div class="grid gap-2">
+                <div class="grid gap-2">
                     <Label for="name">Name</Label>
                     <Input
                         id="name"
@@ -53,8 +53,8 @@ defineProps<{
                         placeholder="Full name"
                     />
                     <InputError :message="errors.name" />
-                </div> -->
-                <div class="grid gap-2">
+                </div>
+                <!-- <div class="grid gap-2">
                     <Label for="email">Email address</Label>
                     <Input
                         id="email"
@@ -67,7 +67,7 @@ defineProps<{
                         placeholder="email@example.com"
                     />
                     <InputError :message="errors.email" />
-                </div>
+                </div> -->
 
                 <div class="grid gap-2">
                     <div class="flex items-center justify-between">

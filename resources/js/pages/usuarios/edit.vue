@@ -82,7 +82,7 @@ const handleCheckboxChange = (checked: boolean) => {
                     >
                         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div class="grid gap-2">
-                                <Label for="email">Nombre</Label>
+                                <Label for="name">Nombre de Usuario</Label>
                                 <Input
                                     id="name"
                                     type="name"
@@ -91,13 +91,13 @@ const handleCheckboxChange = (checked: boolean) => {
                                     autofocus
                                     :tabindex="1"
                                     autocomplete="name"
-                                    placeholder="Nombre"
+                                    placeholder="Nombre de Usuario"
                                 />
                                 <InputError :message="errors.name" />
                             </div>
 
                             <div class="grid gap-2">
-                                <Label for="email">Correo</Label>
+                                <Label for="email">Correo Electrónico</Label>
                                 <Input
                                     id="email"
                                     type="email"

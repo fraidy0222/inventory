@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\InventarioTienda;
 
+use App\Models\InventarioTienda;
 use Illuminate\Foundation\Http\FormRequest;
 
 class InventarioTiendaRequest extends FormRequest
@@ -21,23 +22,42 @@ class InventarioTiendaRequest extends FormRequest
      */
     public function rules(): array
     {
+        $tiendaId = $this->tienda_id;
+        $productoId = $this->producto_id;
+
         return [
-            'cantidad' => 'required|numeric',
-            'cantidad_minima' => 'required|numeric',
-            'cantidad_maxima' => 'required|numeric',
-            'producto_id' => 'required|exists:productos,id',
             'tienda_id' => 'required|exists:tiendas,id',
+            'producto_id' => [
+                'required',
+                'exists:productos,id',
+                // Validar que no exista ya esta combinación
+                function ($attribute, $value, $fail) use ($tiendaId, $productoId) {
+                    $exists = InventarioTienda::where('tienda_id', $tiendaId)
+                        ->where('producto_id', $productoId)
+                        ->exists();
+
+                    if ($exists) {
+                        $fail('Este producto ya está registrado en la tienda seleccionada.');
+                    }
+                },
+            ],
+            'cantidad' => 'required|numeric|min:0',
+            'cantidad_minima' => 'nullable|numeric|min:0',
+            'cantidad_maxima' => 'nullable|numeric|min:0|gt:cantidad_minima',
         ];
     }
 
     public function messages()
     {
         return [
-            'cantidad.required' => 'El campo cantidad es obligatorio.',
-            'cantidad_minima.required' => 'El campo cantidad minima es obligatorio.',
-            'cantidad_maxima.required' => 'El campo cantidad maxima es obligatorio.',
-            'producto_id.required' => 'El campo producto es obligatorio.',
-            'tienda_id.required' => 'El campo tienda es obligatorio.',
+            'tienda_id.required' => 'Debe seleccionar una tienda.',
+            'producto_id.required' => 'Debe seleccionar un producto.',
+            'producto_id.exists' => 'El producto seleccionado no existe.',
+            'cantidad.required' => 'La cantidad es requerida.',
+            'cantidad.numeric' => 'La cantidad debe ser un número.',
+            'cantidad_minima.numeric' => 'La cantidad mínima debe ser un número.',
+            'cantidad_maxima.numeric' => 'La cantidad máxima debe ser un número.',
+            'cantidad_maxima.gt' => 'La cantidad máxima debe ser mayor que la mínima.',
         ];
     }
 }

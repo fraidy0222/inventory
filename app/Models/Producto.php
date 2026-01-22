@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Producto extends Model
 {
@@ -25,7 +26,14 @@ class Producto extends Model
         'activo' => 'boolean',
     ];
 
-    public function inventarioTiendas(): HasMany
+    public function tiendas(): BelongsToMany
+    {
+        return $this->belongsToMany(Tienda::class, 'inventario_tiendas')
+            ->withPivot('cantidad', 'cantidad_minima', 'cantidad_maxima', 'ultima_actualizacion')
+            ->withTimestamps();
+    }
+
+    public function inventario(): HasMany
     {
         return $this->hasMany(InventarioTienda::class);
     }

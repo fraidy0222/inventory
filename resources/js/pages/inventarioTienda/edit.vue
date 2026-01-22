@@ -9,10 +9,12 @@ import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/AppLayout.vue';
 import productos from '@/routes/productos';
-import { type BreadcrumbItem } from '@/types';
+import type { BreadcrumbItem, Producto } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
+
+const props = defineProps<{ producto: Producto }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -20,20 +22,20 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: productos.index().url,
     },
     {
-        title: 'Crear Producto',
-        href: productos.create().url,
+        title: 'Editar Producto',
+        href: productos.edit(props.producto.id).url,
     },
 ];
 
 const isActive = ref(true);
 
 const form = useForm({
-    nombre: '',
-    descripcion: '',
-    categoria: '',
-    costo_promedio: 0,
-    precio_venta: 0,
-    activo: isActive.value,
+    nombre: props.producto.nombre,
+    descripcion: props.producto.descripcion || '',
+    categoria: props.producto.categoria || '',
+    costo_promedio: props.producto.costo_promedio,
+    precio_venta: props.producto.precio_venta,
+    activo: props.producto.activo,
 });
 
 // Sincronizar valores
@@ -48,9 +50,9 @@ const handleCheckboxChange = (checked: boolean) => {
 };
 
 const submit = () => {
-    form.post('/productos', {
+    form.put(productos.update(props.producto.id).url, {
         onSuccess: () => {
-            toast.success('Producto creado exitosamente');
+            toast.success('Producto editado exitosamente');
         },
     });
 };
@@ -58,12 +60,12 @@ const submit = () => {
 
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
-        <Head title="Crear Producto" />
+        <Head title="Editar Producto" />
 
         <div class="container mx-auto px-4 py-10">
             <Card class="w-full">
                 <CardHeader>
-                    <CardTitle>Crear Producto</CardTitle>
+                    <CardTitle>Editar Producto</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form class="flex flex-col gap-6" @submit.prevent="submit">
@@ -104,7 +106,7 @@ const submit = () => {
                                     type="number"
                                     v-model="form.costo_promedio"
                                     autofocus
-                                    :tabindex="3"
+                                    :tabindex="1"
                                     name="costo_promedio"
                                     step="0.01"
                                     placeholder="Costo promedio del producto"
@@ -120,7 +122,7 @@ const submit = () => {
                                     type="number"
                                     v-model="form.precio_venta"
                                     autofocus
-                                    :tabindex="4"
+                                    :tabindex="1"
                                     name="precio_venta"
                                     step="0.01"
                                     placeholder="Precio de venta del producto"
@@ -140,7 +142,6 @@ const submit = () => {
                                             name="activo"
                                             value="1"
                                             v-model="form.activo"
-                                            :tabindex="5"
                                             @update:checked="
                                                 handleCheckboxChange
                                             "
@@ -179,9 +180,10 @@ const submit = () => {
                                 v-model="form.descripcion"
                                 name="nombre"
                                 autofocus
-                                :tabindex="6"
+                                :tabindex="1"
                                 autocomplete="descripcion"
                                 placeholder="Descripción del producto"
+                                maxlength="100"
                             />
                             <InputError :message="form.errors.descripcion" />
                         </div>
@@ -191,7 +193,7 @@ const submit = () => {
                                 variant="outline"
                                 type="button"
                                 class="mt-4"
-                                :tabindex="7"
+                                :tabindex="4"
                                 data-test="cancel-button"
                             >
                                 <Link :href="productos.index().url">
@@ -201,7 +203,7 @@ const submit = () => {
                             <Button
                                 type="submit"
                                 class="mt-4"
-                                :tabindex="8"
+                                :tabindex="4"
                                 :disabled="form.processing"
                                 data-test="login-button"
                             >

@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('inventario_tiendas', function (Blueprint $table) {
             $table->id();
-            $table->decimal('cantidad', total: 10, places: 2);
-            $table->decimal('cantidad_minima', total: 10, places: 2);
-            $table->decimal('cantidad_maxima', total: 10, places: 2);
+            $table->integer('cantidad');
+            $table->integer('cantidad_minima');
+            $table->integer('cantidad_maxima');
             $table->dateTime('ultima_actualizacion')->useCurrent();
             $table->timestamps();
 

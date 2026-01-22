@@ -45,6 +45,13 @@ export interface Tienda {
     is_active: boolean;
     updated_at: string;
     created_at: string;
+    inventario_tiendas?: (InventarioTienda & { producto: Producto })[];
+}
+
+interface TiendaAgrupada {
+    tienda_id: number;
+    tienda_nombre: string;
+    productos: ProductoInventario[];
 }
 
 export interface Producto {

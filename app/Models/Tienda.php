@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Tienda extends Model
 {
@@ -30,7 +31,14 @@ class Tienda extends Model
         ];
     }
 
-    public function inventarioTiendas(): HasMany
+    public function productos(): BelongsToMany
+    {
+        return $this->belongsToMany(Producto::class, 'inventario_tiendas')
+            ->withPivot('cantidad', 'cantidad_minima', 'cantidad_maxima', 'ultima_actualizacion')
+            ->withTimestamps();
+    }
+
+    public function inventario(): HasMany
     {
         return $this->hasMany(InventarioTienda::class);
     }

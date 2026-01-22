@@ -12,12 +12,14 @@ class InventarioTienda extends Model
         'cantidad_minima',
         'cantidad_maxima',
         'ultima_actualizacion',
+        'producto_id',
+        'tienda_id',
     ];
 
     protected $casts = [
-        'cantidad' => 'decimal:2',
-        'cantidad_minima' => 'decimal:2',
-        'cantidad_maxima' => 'decimal:2',
+        'cantidad' => 'integer',
+        'cantidad_minima' => 'integer',
+        'cantidad_maxima' => 'integer',
         'ultima_actualizacion' => 'datetime',
     ];
 

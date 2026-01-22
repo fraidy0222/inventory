@@ -12,6 +12,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import inventarioTienda from '@/routes/inventarioTienda';
 import productos from '@/routes/productos';
 import tiendas from '@/routes/tiendas';
 import usuarios from '@/routes/usuarios';
@@ -39,6 +40,11 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Productos',
         href: productos.index().url,
+        icon: ShoppingBasket,
+    },
+    {
+        title: 'Inventarios',
+        href: inventarioTienda.index().url,
         icon: ShoppingBasket,
     },
 ];

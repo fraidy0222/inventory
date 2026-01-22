@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ProductoController from '@/actions/App/Http/Controllers/ProductoController';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,12 +17,19 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import inventarioTienda from '@/routes/inventarioTienda';
 import type { BreadcrumbItem, Producto, Tienda } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import axios from 'axios';
+import { ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 
 const props = defineProps<{
     tiendas: Tienda[];
     productos: Producto[];
+    productosEnTiendas?: Record<string, number[]>;
 }>();
+
+// Estado reactivo
+const productosFiltrados = ref<Producto[]>(props.productos);
+const cargandoProductos = ref(false);
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -42,10 +50,52 @@ const form = useForm({
     cantidad_maxima: 0,
 });
 
+// Función para cargar productos no asignados
+const cargarProductosNoAsignados = async (tiendaId: string) => {
+    if (!tiendaId) {
+        // Si no hay tienda seleccionada, mostrar todos los productos
+        productosFiltrados.value = props.productos;
+        form.producto_id = '';
+        return;
+    }
+
+    try {
+        const response = await axios.get(
+            `/api/productos-no-asignados/${tiendaId}`,
+        );
+        productosFiltrados.value = response.data;
+
+        // Resetear el producto seleccionado si ya no está disponible
+        if (
+            form.producto_id &&
+            !productosFiltrados.value.some((p) => p.id == form.producto_id)
+        ) {
+            form.producto_id = '';
+            toast.warning('El producto seleccionado ya está en esta tienda');
+        }
+    } catch (error) {
+        console.error('Error al cargar productos:', error);
+        productosFiltrados.value = [];
+    }
+};
+
+// Watcher para cuando cambia la tienda
+watch(
+    () => form.tienda_id,
+    (nuevaTiendaId) => {
+        cargarProductosNoAsignados(nuevaTiendaId);
+    },
+);
+
 const submit = () => {
     form.post('/inventarioTienda', {
         onSuccess: () => {
             toast.success('Inventario Tienda creado exitosamente');
+        },
+        onError: (errors) => {
+            if (errors.producto_id?.includes('ya está registrado')) {
+                toast.error('Este producto ya está en la tienda seleccionada');
+            }
         },
     });
 };
@@ -96,23 +146,73 @@ const submit = () => {
                                     name="producto_id"
                                     v-model="form.producto_id"
                                     :tabindex="2"
+                                    :disabled="!form.tienda_id"
+                                    required
                                 >
                                     <SelectTrigger class="w-full">
-                                        <SelectValue
-                                            placeholder="Seleccione un producto"
-                                        />
+                                        <div class="flex items-center gap-2">
+                                            <Spinner
+                                                v-if="cargandoProductos"
+                                                class="h-4 w-4"
+                                            />
+                                            <SelectValue
+                                                :placeholder="
+                                                    form.tienda_id
+                                                        ? cargandoProductos
+                                                            ? 'Cargando productos...'
+                                                            : 'Seleccione un producto'
+                                                        : 'Primero seleccione una tienda'
+                                                "
+                                            />
+                                        </div>
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem
-                                            :value="producto.id"
-                                            v-for="producto in productos"
-                                            :key="producto.id"
+                                        <template
+                                            v-if="productosFiltrados.length > 0"
                                         >
-                                            {{ producto.nombre }}
-                                        </SelectItem>
+                                            <SelectItem
+                                                :value="producto.id.toString()"
+                                                v-for="producto in productosFiltrados"
+                                                :key="producto.id"
+                                            >
+                                                {{ producto.nombre }}
+                                            </SelectItem>
+                                        </template>
+                                        <template v-else>
+                                            <div
+                                                class="px-3 py-2 text-sm text-gray-500"
+                                            >
+                                                {{
+                                                    form.tienda_id &&
+                                                    !cargandoProductos
+                                                        ? 'No hay productos disponibles para esta tienda'
+                                                        : 'Seleccione una tienda primero'
+                                                }}
+                                            </div>
+                                        </template>
                                     </SelectContent>
                                 </Select>
-                                <InputError :message="form.errors.tienda_id" />
+                                <InputError
+                                    :message="form.errors.producto_id"
+                                />
+
+                                <div
+                                    v-if="
+                                        form.tienda_id &&
+                                        productosFiltrados.length === 0 &&
+                                        !cargandoProductos
+                                    "
+                                    class="mt-1 text-sm text-amber-600"
+                                >
+                                    Todos los productos ya están asignados a
+                                    esta tienda.
+                                    <Link
+                                        :href="ProductoController.create()"
+                                        class="ml-1 text-blue-600 hover:underline"
+                                    >
+                                        Crear nuevo producto
+                                    </Link>
+                                </div>
                             </div>
 
                             <div class="grid gap-2">

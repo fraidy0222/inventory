@@ -22,5 +22,9 @@ Route::resource('usuarios', UsersController::class);
 Route::resource('tiendas', TiendaController::class);
 Route::resource('productos', ProductoController::class);
 Route::resource('inventarioTienda', InventarioTiendaController::class);
+Route::get(
+    '/api/productos-no-asignados/{tiendaId}',
+    [InventarioTiendaController::class, 'getProductosNoAsignados']
+);
 
 require __DIR__ . '/settings.php';

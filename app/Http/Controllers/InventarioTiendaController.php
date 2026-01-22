@@ -127,8 +127,14 @@ class InventarioTiendaController extends Controller
      */
     public function create()
     {
-        $productos = Producto::all();
-        $tiendas = Tienda::all();
+        $tiendas = Tienda::where('is_active', true)
+            ->orderBy('nombre')
+            ->get(['id', 'nombre']);
+
+        // Obtener TODOS los productos activos inicialmente
+        $productos = Producto::where('activo', true)
+            ->orderBy('nombre')
+            ->get(['id', 'nombre']);
 
         return Inertia::render('inventarioTienda/create', [
             'productos' => $productos,
@@ -179,5 +185,21 @@ class InventarioTiendaController extends Controller
     public function destroy(InventarioTienda $inventarioTienda)
     {
         //
+    }
+
+    public function getProductosNoAsignados($tiendaId)
+    {
+        // Obtener IDs de productos que YA están en la tienda
+        $productosAsignadosIds = InventarioTienda::where('tienda_id', $tiendaId)
+            ->pluck('producto_id')
+            ->toArray();
+
+        // Obtener productos que NO están en la tienda
+        $productos = Producto::where('activo', true)
+            ->whereNotIn('id', $productosAsignadosIds)
+            ->orderBy('nombre')
+            ->get(['id', 'nombre']);
+
+        return response()->json($productos);
     }
 }

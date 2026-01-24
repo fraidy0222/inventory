@@ -14,7 +14,7 @@ import { Form, Head } from '@inertiajs/vue3';
 
 defineProps<{
     status?: string;
-    canResetPassword: boolean;
+    canResetPassword?: boolean;
     canRegister: boolean;
 }>();
 </script>
@@ -23,8 +23,9 @@ defineProps<{
     <AuthBase
         title="Iniciar Sesión"
         description="Escriba su usuario y contraseña para iniciar sesión"
+        :canRegister="canRegister"
     >
-        <Head title="Log in" />
+        <Head title="Iniciar Sesión" />
 
         <div
             v-if="status"

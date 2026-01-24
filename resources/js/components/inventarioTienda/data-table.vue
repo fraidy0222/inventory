@@ -1,4 +1,5 @@
-<script setup lang="ts" generic="TData, TValue">
+<script setup lang="ts">
+import { TiendaAgrupada } from '@/types';
 import type { ColumnDef } from '@tanstack/vue-table';
 import {
     FlexRender,
@@ -8,6 +9,17 @@ import {
 } from '@tanstack/vue-table';
 
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import {
     Table,
     TableBody,
     TableCell,
@@ -15,11 +27,39 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import inventarioTienda from '@/routes/inventarioTienda';
+import { Link, router } from '@inertiajs/vue3';
+import { Pencil, Trash } from 'lucide-vue-next';
+import { ref } from 'vue';
+import { toast } from 'vue-sonner';
 
 const props = defineProps<{
-    columns: ColumnDef<TData, TValue>[];
-    data: TData[];
+    columns: ColumnDef<TiendaAgrupada>[];
+    data: TiendaAgrupada[];
 }>();
+
+const producto = ref({
+    id: 0,
+    nombre: '',
+});
+const deleteDialog = ref(false);
+
+const showDialog = (id: number, nombre: string) => {
+    producto.value.id = id;
+    producto.value.nombre = nombre;
+    deleteDialog.value = !deleteDialog.value;
+};
+
+const destroy = () => {
+    router.delete(inventarioTienda.destroy(producto.value.id).url, {
+        onSuccess: () => {
+            toast.success('Producto de la tienda eliminado exitosamente');
+        },
+        onError: () => {
+            toast.error('Error al eliminar el producto de la tienda');
+        },
+    });
+};
 
 const table = useVueTable({
     get data() {
@@ -96,6 +136,7 @@ const table = useVueTable({
                                                     >Última
                                                     Actualización</TableHead
                                                 >
+                                                <TableHead>Acciones</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -105,7 +146,7 @@ const table = useVueTable({
                                                 :key="producto.id"
                                             >
                                                 <TableCell>{{
-                                                    producto.nombre
+                                                    producto.producto_nombre
                                                 }}</TableCell>
                                                 <TableCell>{{
                                                     producto.cantidad
@@ -117,10 +158,37 @@ const table = useVueTable({
                                                     producto.cantidad_maxima
                                                 }}</TableCell>
                                                 <TableCell>{{
-                                                    new Date(
-                                                        producto.ultima_actualizacion,
-                                                    ).toLocaleDateString()
+                                                    producto.ultima_actualizacion
                                                 }}</TableCell>
+                                                <TableCell>
+                                                    <Button
+                                                        size="icon-sm"
+                                                        variant="ghost"
+                                                        as-child
+                                                    >
+                                                        <Link
+                                                            :href="
+                                                                inventarioTienda.edit(
+                                                                    producto.id,
+                                                                )
+                                                            "
+                                                        >
+                                                            <Pencil />
+                                                        </Link>
+                                                    </Button>
+                                                    <Button
+                                                        size="icon-sm"
+                                                        variant="ghost"
+                                                        @click="
+                                                            showDialog(
+                                                                producto.id,
+                                                                producto.producto_nombre,
+                                                            )
+                                                        "
+                                                    >
+                                                        <Trash />
+                                                    </Button>
+                                                </TableCell>
                                             </TableRow>
                                             <TableRow
                                                 v-if="
@@ -154,5 +222,29 @@ const table = useVueTable({
                 </template>
             </TableBody>
         </Table>
+
+        <AlertDialog v-model:open="deleteDialog">
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle
+                        >Estás seguro de eliminar producto
+                        {{ producto.nombre }} ?</AlertDialogTitle
+                    >
+                    <AlertDialogDescription>
+                        Esta acción no puede ser deshecha. Esta acción eliminará
+                        permanentemente el producto y eliminará sus datos de
+                        nuestros servidores.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                        @click="destroy()"
+                        class="bg-red-500/10 text-red-500 hover:bg-red-500/20"
+                        >Eliminar</AlertDialogAction
+                    >
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </div>
 </template>

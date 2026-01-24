@@ -18,7 +18,13 @@ import tiendas from '@/routes/tiendas';
 import usuarios from '@/routes/usuarios';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { LayoutGrid, ShoppingBasket, Store, Users } from 'lucide-vue-next';
+import {
+    LayoutGrid,
+    Package,
+    ShoppingBasket,
+    Store,
+    Users,
+} from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -45,7 +51,7 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Inventarios',
         href: inventarioTienda.index().url,
-        icon: ShoppingBasket,
+        icon: Package,
     },
 ];
 

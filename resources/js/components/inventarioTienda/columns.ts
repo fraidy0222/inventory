@@ -26,7 +26,7 @@ export const columns: ColumnDef<TiendaAgrupada>[] = [
     },
     {
         accessorKey: 'tienda_nombre',
-        header: 'Tienda',
+        header: 'Nombre de la Tienda',
         cell: ({ row }) => {
             const tienda = row.original.tienda_nombre;
             return h('div', { class: 'font-medium' }, tienda);

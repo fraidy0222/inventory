@@ -33,11 +33,11 @@ const cargandoProductos = ref(false);
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Inventario Tienda',
+        title: 'Inventarios',
         href: inventarioTienda.index().url,
     },
     {
-        title: 'Crear Inventario Tienda',
+        title: 'Crear Inventario',
         href: inventarioTienda.create().url,
     },
 ];
@@ -68,7 +68,9 @@ const cargarProductosNoAsignados = async (tiendaId: string) => {
         // Resetear el producto seleccionado si ya no está disponible
         if (
             form.producto_id &&
-            !productosFiltrados.value.some((p) => p.id == form.producto_id)
+            !productosFiltrados.value.some(
+                (p) => p.id.toString() === form.producto_id,
+            )
         ) {
             form.producto_id = '';
             toast.warning('El producto seleccionado ya está en esta tienda');
@@ -90,7 +92,7 @@ watch(
 const submit = () => {
     form.post('/inventarioTienda', {
         onSuccess: () => {
-            toast.success('Inventario Tienda creado exitosamente');
+            toast.success('El producto ha sido añadido exitosamente');
         },
         onError: (errors) => {
             if (errors.producto_id?.includes('ya está registrado')) {

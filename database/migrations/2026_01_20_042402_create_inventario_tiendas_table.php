@@ -19,8 +19,8 @@ return new class extends Migration
             $table->dateTime('ultima_actualizacion')->useCurrent();
             $table->timestamps();
 
-            $table->foreignId('producto_id')->constrained('productos');
-            $table->foreignId('tienda_id')->constrained('tiendas');
+            $table->foreignId('producto_id')->constrained('productos')->onDelete('cascade');
+            $table->foreignId('tienda_id')->constrained('tiendas')->onDelete('cascade');
         });
     }
 

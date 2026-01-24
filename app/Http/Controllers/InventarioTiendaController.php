@@ -24,6 +24,7 @@ class InventarioTiendaController extends Controller
         // Query principal
         $query = InventarioTienda::with(['tienda', 'producto']);
 
+
         // Aplicar filtros
         if ($tiendaId) {
             $query->where('tienda_id', $tiendaId);
@@ -80,6 +81,7 @@ class InventarioTiendaController extends Controller
 
             if (!isset($tiendasMap[$tiendaId])) {
                 $tiendasMap[$tiendaId] = [
+                    'id' => $item->id,
                     'tienda_id' => $tiendaId,
                     'tienda_nombre' => $item->tienda->nombre,
                     'tienda_is_active' => $item->tienda->is_active,
@@ -89,14 +91,14 @@ class InventarioTiendaController extends Controller
 
             $tiendasMap[$tiendaId]['productos'][] = [
                 'id' => $item->id,
-                'id' => $item->producto_id,
-                'nombre' => $item->producto->nombre,
-                'categoria' => $item->producto->categoria,
+                'producto_id' => $item->producto_id,
+                'producto_nombre' => $item->producto->nombre,
+                'producto_categoria' => $item->producto->categoria,
                 'cantidad' => $item->cantidad,
                 'cantidad_minima' => $item->cantidad_minima,
                 'cantidad_maxima' => $item->cantidad_maxima,
-                'ultima_actualizacion' => $item->ultima_actualizacion,
-                'created_at' => $item->created_at?->format('d/m/Y H:i'),
+                'ultima_actualizacion' => $item->ultima_actualizacion?->format('d/m/Y'),
+                'created_at' => $item->created_at?->format('d/m/Y'),
             ];
         }
 
@@ -105,7 +107,7 @@ class InventarioTiendaController extends Controller
 
         // Obtener tiendas para el filtro
         $tiendas = Tienda::where('is_active', true)
-            ->orderBy('nombre')
+            // ->orderBy('nombre')
             ->get(['id', 'nombre']);
 
         return Inertia::render('inventarioTienda/index', [
@@ -128,12 +130,12 @@ class InventarioTiendaController extends Controller
     public function create()
     {
         $tiendas = Tienda::where('is_active', true)
-            ->orderBy('nombre')
+            // ->orderBy('nombre')
             ->get(['id', 'nombre']);
 
         // Obtener TODOS los productos activos inicialmente
         $productos = Producto::where('activo', true)
-            ->orderBy('nombre')
+            // ->orderBy('nombre')
             ->get(['id', 'nombre']);
 
         return Inertia::render('inventarioTienda/create', [
@@ -147,10 +149,7 @@ class InventarioTiendaController extends Controller
      */
     public function store(InventarioTiendaRequest $request)
     {
-        $inventarioTienda = InventarioTienda::create($request->validated());
-
-        // $inventarioTienda->producto()->attach($request->producto_id);
-        // $inventarioTienda->tienda()->attach($request->tienda_id);
+        InventarioTienda::create($request->validated());
 
         return to_route('inventarioTienda.index');
     }
@@ -168,15 +167,61 @@ class InventarioTiendaController extends Controller
      */
     public function edit(InventarioTienda $inventarioTienda)
     {
-        //
+        // Encuentra el registro específico del inventario
+        $inventario = InventarioTienda::with(['tienda', 'producto'])
+            ->findOrFail($inventarioTienda->id);
+
+
+        // Obtener todas las tiendas activas
+        $tiendas = Tienda::where('is_active', true)
+            // ->orderBy('nombre')
+            ->get(['id', 'nombre', 'is_active']);
+
+        // Obtener todos los productos activos
+        $productos = Producto::where('activo', true)
+            // ->orderBy('nombre')
+            ->get(['id', 'nombre', 'categoria']);
+
+        // Obtener productos que YA están en esta tienda (para el filtro)
+        $productosEnTienda = InventarioTienda::where('tienda_id', $inventario->tienda_id)
+            ->where('id', '!=', $inventario->id) // Excluir el producto actual
+            ->pluck('producto_id')
+            ->toArray();
+
+        // Filtrar productos disponibles (todos menos los que ya están en la tienda)
+        $productosDisponibles = $productos->filter(function ($producto) use ($productosEnTienda) {
+            return !in_array($producto->id, $productosEnTienda);
+        })->values();
+
+        return Inertia::render('inventarioTienda/edit', [
+            'inventario' => [
+                'id' => $inventario->id,
+                'tienda_id' => $inventario->tienda->id,
+                'tienda_nombre' => $inventario->tienda->nombre,
+                'producto_id' => $inventario->producto->id,
+                'producto_nombre' => $inventario->producto->nombre,
+                'producto_categoria' => $inventario->producto->categoria,
+                'cantidad' => (float) $inventario->cantidad,
+                'cantidad_minima' => (float) $inventario->cantidad_minima,
+                'cantidad_maxima' => (float) $inventario->cantidad_maxima,
+                'ultima_actualizacion' => $inventario->ultima_actualizacion?->format('d/m/Y'),
+                'created_at' => $inventario->created_at?->format('d/m/Y'),
+            ],
+            'tiendas' => $tiendas,
+            'productos' => $productos,
+            'productosDisponibles' => $productosDisponibles,
+            'productosEnTienda' => $productosEnTienda, // Para validación en frontend
+        ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, InventarioTienda $inventarioTienda)
+    public function update(InventarioTiendaRequest $request, InventarioTienda $inventarioTienda)
     {
-        //
+        $inventarioTienda->update($request->validated());
+
+        return to_route('inventarioTienda.index');
     }
 
     /**
@@ -184,7 +229,9 @@ class InventarioTiendaController extends Controller
      */
     public function destroy(InventarioTienda $inventarioTienda)
     {
-        //
+        $inventarioTienda->delete();
+
+        return to_route('inventarioTienda.index');
     }
 
     public function getProductosNoAsignados($tiendaId)
@@ -197,7 +244,7 @@ class InventarioTiendaController extends Controller
         // Obtener productos que NO están en la tienda
         $productos = Producto::where('activo', true)
             ->whereNotIn('id', $productosAsignadosIds)
-            ->orderBy('nombre')
+            // ->orderBy('nombre')
             ->get(['id', 'nombre']);
 
         return response()->json($productos);

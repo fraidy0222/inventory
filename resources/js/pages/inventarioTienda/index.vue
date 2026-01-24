@@ -81,7 +81,7 @@ const displayedPerPage = computed(() => {
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Inventario por Tienda',
+        title: 'Inventarios',
         href: inventarioTienda.index().url,
     },
 ];
@@ -89,11 +89,11 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
-        <Head title="Inventario por Tienda" />
+        <Head title="Inventarios" />
         <div class="container mx-auto px-4 py-6">
             <div class="mb-8 flex items-center justify-between">
                 <Heading
-                    title="Inventario por Tienda"
+                    title="Inventarios"
                     :has-class="true"
                     class="mb-0 space-y-0"
                 />

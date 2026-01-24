@@ -32,18 +32,22 @@ class InventarioTiendaRequest extends FormRequest
                 'exists:productos,id',
                 // Validar que no exista ya esta combinación
                 function ($attribute, $value, $fail) use ($tiendaId, $productoId) {
-                    $exists = InventarioTienda::where('tienda_id', $tiendaId)
-                        ->where('producto_id', $productoId)
-                        ->exists();
+                    $query = InventarioTienda::where('tienda_id', $tiendaId)
+                        ->where('producto_id', $productoId);
 
-                    if ($exists) {
+                    // Si estamos editando, excluir el registro actual
+                    if ($this->route('inventarioTienda')) {
+                        $query->where('id', '!=', $this->route('inventarioTienda')->id);
+                    }
+
+                    if ($query->exists()) {
                         $fail('Este producto ya está registrado en la tienda seleccionada.');
                     }
                 },
             ],
             'cantidad' => 'required|numeric|min:0',
             'cantidad_minima' => 'nullable|numeric|min:0',
-            'cantidad_maxima' => 'nullable|numeric|min:0|gt:cantidad_minima',
+            'cantidad_maxima' => 'nullable|numeric|min:0|gte:cantidad_minima',
         ];
     }
 
@@ -57,7 +61,7 @@ class InventarioTiendaRequest extends FormRequest
             'cantidad.numeric' => 'La cantidad debe ser un número.',
             'cantidad_minima.numeric' => 'La cantidad mínima debe ser un número.',
             'cantidad_maxima.numeric' => 'La cantidad máxima debe ser un número.',
-            'cantidad_maxima.gt' => 'La cantidad máxima debe ser mayor que la mínima.',
+            'cantidad_maxima.gte' => 'La cantidad máxima debe ser mayor o igual que la mínima.',
         ];
     }
 }

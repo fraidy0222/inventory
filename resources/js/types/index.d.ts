@@ -48,9 +48,35 @@ export interface Tienda {
     inventario_tiendas?: (InventarioTienda & { producto: Producto })[];
 }
 
-interface TiendaAgrupada {
+export interface InventarioTienda {
+    id: number;
+    cantidad: number;
+    cantidad_minima: number;
+    cantidad_maxima: number;
+    ultima_actualizacion: string;
+    producto_id: number;
+    tienda_id: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface ProductoInventario {
+    id: number;
     tienda_id: number;
     tienda_nombre: string;
+    producto_id: number;
+    producto_nombre: string;
+    producto_categoria: string | null;
+    cantidad: number;
+    cantidad_minima: number;
+    cantidad_maxima: number;
+    ultima_actualizacion: string;
+}
+
+export interface TiendaAgrupada {
+    tienda_id: number;
+    tienda_nombre: string;
+    tienda_is_active: boolean;
     productos: ProductoInventario[];
 }
 

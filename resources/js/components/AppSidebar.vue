@@ -12,6 +12,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import destinos from '@/routes/destinos';
 import inventarioTienda from '@/routes/inventarioTienda';
 import productos from '@/routes/productos';
 import tiendas from '@/routes/tiendas';
@@ -20,6 +21,7 @@ import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import {
     LayoutGrid,
+    MapPin,
     Package,
     ShoppingBasket,
     Store,
@@ -52,6 +54,11 @@ const mainNavItems: NavItem[] = [
         title: 'Inventarios',
         href: inventarioTienda.index().url,
         icon: Package,
+    },
+    {
+        title: 'Destinos',
+        href: destinos.index().url,
+        icon: MapPin,
     },
 ];
 

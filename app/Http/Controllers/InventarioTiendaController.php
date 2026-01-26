@@ -97,7 +97,7 @@ class InventarioTiendaController extends Controller
                 'cantidad' => $item->cantidad,
                 'cantidad_minima' => $item->cantidad_minima,
                 'cantidad_maxima' => $item->cantidad_maxima,
-                'ultima_actualizacion' => $item->ultima_actualizacion?->format('d/m/Y'),
+                'ultima_actualizacion' => $item->updated_at?->format('d/m/Y'),
                 'created_at' => $item->created_at?->format('d/m/Y'),
             ];
         }
@@ -204,7 +204,7 @@ class InventarioTiendaController extends Controller
                 'cantidad' => (float) $inventario->cantidad,
                 'cantidad_minima' => (float) $inventario->cantidad_minima,
                 'cantidad_maxima' => (float) $inventario->cantidad_maxima,
-                'ultima_actualizacion' => $inventario->ultima_actualizacion?->format('d/m/Y'),
+                'ultima_actualizacion' => $inventario->updated_at?->format('d/m/Y'),
                 'created_at' => $inventario->created_at?->format('d/m/Y'),
             ],
             'tiendas' => $tiendas,

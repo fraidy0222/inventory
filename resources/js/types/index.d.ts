@@ -113,3 +113,10 @@ export interface PaginatedData<T> {
     to: number;
     total: number;
 }
+
+export interface Destino {
+    id: number;
+    nombre: string;
+    updated_at: string;
+    created_at: string;
+}

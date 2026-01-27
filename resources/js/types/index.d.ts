@@ -120,3 +120,14 @@ export interface Destino {
     updated_at: string;
     created_at: string;
 }
+
+export interface Movimiento {
+    id: number;
+    producto_id: number;
+    tienda_id: number;
+    destino_id: number;
+    cantidad: number;
+    tipo: string;
+    created_at: string;
+    updated_at: string;
+}

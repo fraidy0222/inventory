@@ -5,6 +5,7 @@ use App\Http\Controllers\UsersController;
 use App\Http\Controllers\TiendaController;
 use App\Http\Controllers\InventarioTiendaController;
 use App\Http\Controllers\DestinoController;
+use App\Http\Controllers\MovimientoController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -28,6 +29,7 @@ Route::resource('tiendas', TiendaController::class);
 Route::resource('productos', ProductoController::class);
 Route::resource('inventarioTienda', InventarioTiendaController::class);
 Route::resource('destinos', DestinoController::class);
+Route::resource('movimientos', MovimientoController::class);
 Route::get(
     '/api/productos-no-asignados/{tiendaId}',
     [InventarioTiendaController::class, 'getProductosNoAsignados']

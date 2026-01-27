@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use OwenIt\Auditing\Contracts\Auditable;
 
 class InventarioTienda extends Model implements Auditable
@@ -34,5 +35,10 @@ class InventarioTienda extends Model implements Auditable
     public function tienda(): BelongsTo
     {
         return $this->belongsTo(Tienda::class);
+    }
+
+    public function movimientos(): HasMany
+    {
+        return $this->hasMany(Movimiento::class);
     }
 }

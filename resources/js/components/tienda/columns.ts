@@ -34,7 +34,7 @@ export const columns: ColumnDef<Tienda>[] = [
             return h(
                 Badge,
                 { variant: activo ? 'default' : 'secondary' },
-                () => (activo ? 'Activo' : 'Inactivo'),
+                () => (activo ? 'Activa' : 'Inactiva'),
             );
         },
     },

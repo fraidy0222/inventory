@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import Heading from '@/components/Heading.vue';
+import { columns } from '@/components/movimientos/columns';
+import DataTable from '@/components/movimientos/data-table.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -19,11 +21,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { columns } from '@/components/usuarios/columns';
-import DataTable from '@/components/usuarios/data-table.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
-import usuarios from '@/routes/usuarios';
-import { type BreadcrumbItem, type PaginatedData, type User } from '@/types';
+import movimientosRoute from '@/routes/movimientos';
+import type { BreadcrumbItem, PaginatedData, TiendaMovimientos } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
 import {
@@ -37,21 +37,25 @@ import {
 import { computed, ref } from 'vue';
 
 interface Props {
-    users: PaginatedData<User>;
-    search?: string;
+    movimientos: PaginatedData<TiendaMovimientos>;
+    filters: {
+        search?: string;
+        tienda_id?: string;
+        per_page?: string | number;
+    };
 }
 
 const props = defineProps<Props>();
 
-const searchQuery = ref(props.search ?? '');
+const searchQuery = ref(props.filters.search ?? '');
 
 const handleSearch = useDebounceFn((value: string | number) => {
     const searchValue = String(value);
     searchQuery.value = searchValue;
     const params = new URLSearchParams();
     if (searchValue) params.set('search', searchValue);
-    params.set('per_page', String(props.users.per_page));
-    router.visit(`${props.users.path}?${params.toString()}`, {
+    params.set('per_page', String(props.movimientos.per_page));
+    router.visit(`${props.movimientos.path}?${params.toString()}`, {
         preserveScroll: true,
         preserveState: true,
     });
@@ -62,42 +66,41 @@ const handlePerPageChange = (value: any) => {
     const params = new URLSearchParams();
     params.set('per_page', String(value));
     if (searchQuery.value) params.set('search', searchQuery.value);
-    router.visit(`${props.users.path}?${params.toString()}`, {
+    router.visit(`${props.movimientos.path}?${params.toString()}`, {
         preserveScroll: true,
     });
 };
 
 // Determine the display value for the select
 const displayedPerPage = computed(() => {
-    // If per_page equals total users, we're showing all
-    if (props.users.per_page === props.users.total) {
+    if (props.movimientos.per_page === props.movimientos.total) {
         return '-1';
     }
-    return String(props.users.per_page);
+    return String(props.movimientos.per_page);
 });
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Usuarios',
-        href: usuarios.index().url,
+        title: 'Movimientos',
+        href: movimientosRoute.index().url,
     },
 ];
 </script>
 
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
-        <Head title="Usuarios" />
+        <Head title="Movimientos" />
         <div class="container mx-auto px-4 py-6">
             <div class="mb-8 flex items-center justify-between">
                 <Heading
-                    title="Usuarios"
+                    title="Movimientos"
                     :has-class="true"
                     class="mb-0 space-y-0"
                 />
                 <Button as-child>
-                    <Link :href="usuarios.create()">
+                    <Link :href="movimientosRoute.create()">
                         <Plus />
-                        Añadir Usuario
+                        Añadir Movimiento
                     </Link>
                 </Button>
             </div>
@@ -111,7 +114,7 @@ const breadcrumbs: BreadcrumbItem[] = [
                     />
                     <Input
                         :model-value="searchQuery"
-                        placeholder="Buscar usuarios..."
+                        placeholder="Buscar..."
                         class="pl-8"
                         @update:model-value="handleSearch"
                     />
@@ -119,7 +122,7 @@ const breadcrumbs: BreadcrumbItem[] = [
             </div>
 
             <div class="overflow-x-auto">
-                <DataTable :columns="columns" :data="users.data" />
+                <DataTable :columns="columns" :data="movimientos.data" />
             </div>
 
             <div
@@ -129,8 +132,9 @@ const breadcrumbs: BreadcrumbItem[] = [
                     class="flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:gap-4"
                 >
                     <span>
-                        Mostrando {{ users.from ?? 0 }} a {{ users.to ?? 0 }} de
-                        {{ users.total }} registros
+                        Mostrando {{ movimientos.from ?? 0 }} a
+                        {{ movimientos.to ?? 0 }} de
+                        {{ movimientos.total }} registros
                     </span>
                     <div class="flex items-center gap-2">
                         <span>Mostrar:</span>
@@ -152,11 +156,11 @@ const breadcrumbs: BreadcrumbItem[] = [
                 </div>
 
                 <Pagination
-                    :total="users.total"
+                    :total="movimientos.total"
                     :sibling-count="1"
                     show-edges
-                    :default-page="users.current_page"
-                    :items-per-page="users.per_page"
+                    :default-page="movimientos.current_page"
+                    :items-per-page="movimientos.per_page"
                 >
                     <PaginationContent
                         v-slot="{ items }"
@@ -164,7 +168,7 @@ const breadcrumbs: BreadcrumbItem[] = [
                     >
                         <PaginationFirst
                             @click="
-                                $inertia.visit(users.first_page_url, {
+                                $inertia.visit(movimientos.first_page_url, {
                                     preserveScroll: true,
                                 })
                             "
@@ -173,10 +177,13 @@ const breadcrumbs: BreadcrumbItem[] = [
                         </PaginationFirst>
                         <PaginationPrevious
                             @click="
-                                users.prev_page_url
-                                    ? $inertia.visit(users.prev_page_url, {
-                                          preserveScroll: true,
-                                      })
+                                movimientos.prev_page_url
+                                    ? $inertia.visit(
+                                          movimientos.prev_page_url,
+                                          {
+                                              preserveScroll: true,
+                                          },
+                                      )
                                     : null
                             "
                         >
@@ -193,13 +200,13 @@ const breadcrumbs: BreadcrumbItem[] = [
                                 <Button
                                     class="h-9 w-9 p-0"
                                     :variant="
-                                        item.value === users.current_page
+                                        item.value === movimientos.current_page
                                             ? 'default'
                                             : 'outline'
                                     "
                                     @click="
                                         $inertia.visit(
-                                            `${users.path}?page=${item.value}&per_page=${users.per_page}`,
+                                            `${movimientos.path}?page=${item.value}&per_page=${movimientos.per_page}`,
                                             { preserveScroll: true },
                                         )
                                     "
@@ -216,10 +223,13 @@ const breadcrumbs: BreadcrumbItem[] = [
 
                         <PaginationNext
                             @click="
-                                users.next_page_url
-                                    ? $inertia.visit(users.next_page_url, {
-                                          preserveScroll: true,
-                                      })
+                                movimientos.next_page_url
+                                    ? $inertia.visit(
+                                          movimientos.next_page_url,
+                                          {
+                                              preserveScroll: true,
+                                          },
+                                      )
                                     : null
                             "
                         >
@@ -227,7 +237,7 @@ const breadcrumbs: BreadcrumbItem[] = [
                         </PaginationNext>
                         <PaginationLast
                             @click="
-                                $inertia.visit(users.last_page_url, {
+                                $inertia.visit(movimientos.last_page_url, {
                                     preserveScroll: true,
                                 })
                             "

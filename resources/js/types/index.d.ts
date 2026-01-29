@@ -85,8 +85,6 @@ export interface Producto {
     nombre: string;
     descripcion: string | null;
     categoria: string | null;
-    costo_promedio: number;
-    precio_venta: number;
     activo: boolean;
     created_at: string;
     updated_at: string;
@@ -126,8 +124,41 @@ export interface Movimiento {
     producto_id: number;
     tienda_id: number;
     destino_id: number;
-    cantidad: number;
-    tipo: string;
+    entradas: number;
+    salidas: number;
+    traslados: number;
+    venta_diaria: number;
+    inventario_actual: number;
+    producto: Producto;
+    tienda: Tienda;
+    destino: Destino;
+    usuario: User;
+    inventario_tienda: InventarioTienda & { tienda: Tienda };
     created_at: string;
     updated_at: string;
+}
+
+export interface RegistroMovimiento {
+    id: number;
+    producto_id: number;
+    producto_nombre: string;
+    producto_categoria: string | null;
+    entradas: number;
+    salidas: number;
+    traslados: number;
+    venta_diaria: number;
+    destino_id: number;
+    destino_nombre: string;
+    usuario_id: number;
+    usuario_nombre: string;
+    inventario_actual: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface TiendaMovimientos {
+    tienda_id: number;
+    tienda_nombre: string;
+    tienda_is_active: boolean;
+    registros: RegistroMovimiento[];
 }

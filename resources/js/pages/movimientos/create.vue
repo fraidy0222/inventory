@@ -1,70 +1,144 @@
 <script setup lang="ts">
+import ProductoController from '@/actions/App/Http/Controllers/ProductoController';
 import InputError from '@/components/InputError.vue';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
-    SelectGroup,
     SelectItem,
-    SelectLabel,
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/AppLayout.vue';
-import usuarios from '@/routes/usuarios';
-import { type BreadcrumbItem } from '@/types';
+import movimientos from '@/routes/movimientos';
+import type { BreadcrumbItem, Destino, Producto, Tienda, User } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import axios from 'axios';
+import { AlertCircleIcon } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 
+const props = defineProps<{
+    tiendas: Tienda[];
+    productos: Producto[];
+    productosEnTiendas?: Record<string, number[]>;
+    destinos: Destino[];
+    usuarios: User[];
+    auth: {
+        user: User;
+    };
+}>();
+
+// Estado reactivo
+const productosFiltrados = ref<Producto[]>(props.productos);
+const cargandoProductos = ref(false);
+
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Usuarios',
-        href: usuarios.index().url,
+        title: 'Movimientos',
+        href: movimientos.index().url,
     },
     {
-        title: 'Crear Usuario',
-        href: usuarios.create().url,
+        title: 'Crear Movimiento',
+        href: movimientos.create().url,
     },
 ];
 
-const roles = [
-    { value: 'admin', label: 'Admin' },
-    { value: 'supervisor', label: 'Supervisor' },
-    { value: 'empleado', label: 'Empleado' },
-];
-
-const isActive = ref(true);
-
 const form = useForm({
-    name: '',
-    email: '',
-    password: '',
-    password_confirmation: '',
-    role: '',
-    is_active: isActive.value,
+    entradas: 0,
+    salidas: 0,
+    traslados: 0,
+    venta_diaria: 0,
+    producto_id: '',
+    destino_id: '',
+    usuario_id: props.auth.user.id.toString(), // Usuario autenticado
+    tienda_id: '',
+    inventario_tienda_id: '',
 });
 
-// Sincronizar valores
-watch(isActive, (newValue) => {
-    form.is_active = newValue;
-});
+// Función para cargar productos que están en el inventario de la tienda
+const cargarProductosNoAsignados = async (tiendaId: string) => {
+    if (!tiendaId) {
+        // Si no hay tienda seleccionada, limpiar productos
+        productosFiltrados.value = [];
+        form.producto_id = '';
+        return;
+    }
 
-// O manejar el cambio manualmente
-const handleCheckboxChange = (checked: boolean) => {
-    form.is_active = checked;
-    isActive.value = checked;
+    try {
+        cargandoProductos.value = true;
+        const response = await axios.get(
+            `/api/movimientos/productos-en-tienda/${tiendaId}`,
+        );
+        productosFiltrados.value = response.data;
+
+        // Resetear el producto seleccionado si ya no está disponible
+        if (
+            form.producto_id &&
+            !productosFiltrados.value.some(
+                (p) => p.id.toString() === form.producto_id,
+            )
+        ) {
+            form.producto_id = '';
+        }
+    } catch (error) {
+        console.error('Error al cargar productos:', error);
+        productosFiltrados.value = [];
+        toast.error('Error al cargar los productos de la tienda');
+    } finally {
+        cargandoProductos.value = false;
+    }
 };
 
+// Watcher para cuando cambia la tienda
+watch(
+    () => form.tienda_id,
+    (nuevaTiendaId) => {
+        cargarProductosNoAsignados(nuevaTiendaId);
+        // Resetear inventario_tienda_id cuando cambia la tienda
+        form.inventario_tienda_id = '';
+    },
+);
+
+// Watcher para cuando cambian tienda y producto - obtener inventario_tienda_id
+watch(
+    [() => form.tienda_id, () => form.producto_id],
+    async ([tiendaId, productoId]) => {
+        if (tiendaId && productoId) {
+            try {
+                const response = await axios.get(
+                    `/api/movimientos/inventario/${tiendaId}/${productoId}`,
+                );
+                form.inventario_tienda_id = response.data.id.toString();
+            } catch (error) {
+                console.error('Error al obtener inventario:', error);
+                form.inventario_tienda_id = '';
+                toast.error(
+                    'No se encontró inventario para esta combinación de tienda y producto',
+                );
+            }
+        } else {
+            form.inventario_tienda_id = '';
+        }
+    },
+);
+
 const submit = () => {
-    form.post('/usuarios', {
+    form.post('/movimientos', {
         onSuccess: () => {
-            toast.success('Usuario creado exitosamente');
+            toast.success('El movimiento ha sido añadido exitosamente');
+        },
+        onError: (errors) => {
+            if (errors.producto_id?.includes('ya está registrado')) {
+                toast.error(
+                    'Este movimiento ya está en la tienda seleccionada',
+                );
+            }
         },
     });
 };
@@ -72,139 +146,216 @@ const submit = () => {
 
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
-        <Head title="Crear Usuario" />
-
+        <Head title="Crear Movimiento" />
         <div class="container mx-auto px-4 py-10">
+            <Alert
+                variant="destructive"
+                class="mb-4"
+                v-if="form.errors.inventario_tienda_id"
+            >
+                <AlertCircleIcon />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>
+                    <p>
+                        {{ form.errors.inventario_tienda_id }}
+                    </p>
+                </AlertDescription>
+            </Alert>
+
             <Card class="w-full">
                 <CardHeader>
-                    <CardTitle>Crear Usuario</CardTitle>
+                    <CardTitle>Crear Movimiento</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form class="flex flex-col gap-6" @submit.prevent="submit">
                         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div class="grid gap-2">
-                                <Label for="name">Nombre de Usuario</Label>
-                                <Input
-                                    id="name"
-                                    type="name"
-                                    v-model="form.name"
-                                    name="name"
-                                    autofocus
-                                    :tabindex="1"
-                                    autocomplete="name"
-                                    placeholder="Nombre de Usuario"
-                                />
-                                <InputError :message="form.errors.name" />
-                            </div>
+                                <Label for="tienda">Tienda</Label>
 
-                            <div class="grid gap-2">
-                                <Label for="email">Correo Electrónico</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    v-model="form.email"
-                                    name="email"
-                                    autofocus
+                                <Select
+                                    name="tienda_id"
+                                    v-model="form.tienda_id"
                                     :tabindex="1"
-                                    autocomplete="email"
-                                    placeholder="email@example.com"
-                                />
-                                <InputError :message="form.errors.email" />
-                            </div>
-
-                            <div class="grid gap-2">
-                                <Label for="password">Contraseña</Label>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    v-model="form.password"
-                                    name="password"
-                                    :tabindex="1"
-                                    autocomplete="current-password"
-                                    placeholder="Contraseña"
-                                />
-                                <InputError :message="form.errors.password" />
-                            </div>
-
-                            <div class="grid gap-2">
-                                <Label for="password_confirmation"
-                                    >Confirmar Contraseña</Label
                                 >
-                                <Input
-                                    id="password_confirmation"
-                                    type="password"
-                                    v-model="form.password_confirmation"
-                                    name="password_confirmation"
-                                    :tabindex="1"
-                                    autocomplete="current-password"
-                                    placeholder="Confirmar Contraseña"
-                                />
-                                <InputError
-                                    :message="form.errors.password_confirmation"
-                                />
-                            </div>
-
-                            <div class="grid gap-2">
-                                <Label for="role">Rol</Label>
-                                <Select name="role" v-model="form.role">
                                     <SelectTrigger class="w-full">
                                         <SelectValue
-                                            placeholder="Selecciona un rol"
+                                            placeholder="Seleccione una tienda"
                                         />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectGroup>
-                                            <SelectLabel>Roles</SelectLabel>
-                                            <SelectItem
-                                                :value="role.value"
-                                                v-for="role in roles"
-                                                :key="role.value"
-                                            >
-                                                {{ role.label }}
-                                            </SelectItem>
-                                        </SelectGroup>
+                                        <SelectItem
+                                            :value="tienda.id"
+                                            v-for="tienda in tiendas"
+                                            :key="tienda.id"
+                                        >
+                                            {{ tienda.nombre }}
+                                        </SelectItem>
                                     </SelectContent>
                                 </Select>
-                                <InputError :message="form.errors.role" />
+                                <InputError :message="form.errors.tienda_id" />
+                            </div>
+
+                            <div class="grid gap-2">
+                                <Label for="producto">Producto</Label>
+
+                                <Select
+                                    name="producto_id"
+                                    v-model="form.producto_id"
+                                    :tabindex="2"
+                                    :disabled="!form.tienda_id"
+                                    required
+                                >
+                                    <SelectTrigger class="w-full">
+                                        <div class="flex items-center gap-2">
+                                            <Spinner
+                                                v-if="cargandoProductos"
+                                                class="h-4 w-4"
+                                            />
+                                            <SelectValue
+                                                :placeholder="
+                                                    form.tienda_id
+                                                        ? cargandoProductos
+                                                            ? 'Cargando productos...'
+                                                            : 'Seleccione un producto'
+                                                        : 'Primero seleccione una tienda'
+                                                "
+                                            />
+                                        </div>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <template
+                                            v-if="productosFiltrados.length > 0"
+                                        >
+                                            <SelectItem
+                                                :value="producto.id.toString()"
+                                                v-for="producto in productosFiltrados"
+                                                :key="producto.id"
+                                            >
+                                                {{ producto.nombre }}
+                                            </SelectItem>
+                                        </template>
+                                        <template v-else>
+                                            <div
+                                                class="px-3 py-2 text-sm text-gray-500"
+                                            >
+                                                {{
+                                                    form.tienda_id &&
+                                                    !cargandoProductos
+                                                        ? 'No hay productos disponibles para esta tienda'
+                                                        : 'Seleccione una tienda primero'
+                                                }}
+                                            </div>
+                                        </template>
+                                    </SelectContent>
+                                </Select>
+                                <InputError
+                                    :message="form.errors.producto_id"
+                                />
+
+                                <div
+                                    v-if="
+                                        form.tienda_id &&
+                                        productosFiltrados.length === 0 &&
+                                        !cargandoProductos
+                                    "
+                                    class="mt-1 text-sm text-amber-600"
+                                >
+                                    Todos los productos ya están asignados a
+                                    esta tienda.
+                                    <Link
+                                        :href="ProductoController.create()"
+                                        class="ml-1 text-blue-600 hover:underline"
+                                    >
+                                        Crear nuevo producto
+                                    </Link>
+                                </div>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <Label for="entradas">Entradas</Label>
+                                <Input
+                                    id="entradas"
+                                    type="number"
+                                    v-model="form.entradas"
+                                    autofocus
+                                    :tabindex="3"
+                                    name="entradas"
+                                    step="0.01"
+                                    placeholder="Cantidad de entradas"
+                                />
+                                <InputError :message="form.errors.entradas" />
+                            </div>
+
+                            <div class="grid gap-2">
+                                <Label for="salidas">Salidas</Label>
+                                <Input
+                                    id="salidas"
+                                    type="number"
+                                    v-model="form.salidas"
+                                    autofocus
+                                    :tabindex="4"
+                                    name="salidas"
+                                    step="0.01"
+                                    placeholder="Cantidad de salidas"
+                                />
+                                <InputError :message="form.errors.salidas" />
+                            </div>
+
+                            <div class="grid gap-2">
+                                <Label for="traslados">Traslados</Label>
+                                <Input
+                                    id="traslados"
+                                    type="number"
+                                    v-model="form.traslados"
+                                    autofocus
+                                    :tabindex="5"
+                                    name="traslados"
+                                    step="0.01"
+                                    placeholder="Cantidad de traslados"
+                                />
+                                <InputError :message="form.errors.traslados" />
                             </div>
                             <div class="grid gap-2">
-                                <div class="flex items-center gap-3">
-                                    <Label
-                                        class="flex w-full items-start gap-3 rounded-lg border p-3 hover:bg-accent/50 has-[[aria-checked=true]]:border-blue-600 has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-blue-900 dark:has-[[aria-checked=true]]:bg-blue-950"
-                                    >
-                                        <Checkbox
-                                            id="toggle-2"
-                                            name="is_active"
-                                            value="1"
-                                            v-model="form.is_active"
-                                            @update:checked="
-                                                handleCheckboxChange
-                                            "
-                                            class="data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white dark:data-[state=checked]:border-blue-700 dark:data-[state=checked]:bg-blue-700"
+                                <Label for="venta_diaria">Venta Diaria</Label>
+                                <Input
+                                    id="venta_diaria"
+                                    type="number"
+                                    v-model="form.venta_diaria"
+                                    autofocus
+                                    :tabindex="5"
+                                    name="venta_diaria"
+                                    step="0.01"
+                                    placeholder="Cantidad de venta diaria"
+                                />
+                                <InputError
+                                    :message="form.errors.venta_diaria"
+                                />
+                            </div>
+
+                            <div class="grid gap-2">
+                                <Label for="destino_id">Destino</Label>
+
+                                <Select
+                                    name="destino_id"
+                                    v-model="form.destino_id"
+                                    :tabindex="1"
+                                >
+                                    <SelectTrigger class="w-full">
+                                        <SelectValue
+                                            placeholder="Seleccione un destino"
                                         />
-                                        <div class="grid gap-1.5 font-normal">
-                                            <p
-                                                class="text-sm leading-none font-medium"
-                                            >
-                                                {{
-                                                    form.is_active
-                                                        ? 'Activo'
-                                                        : 'Inactivo'
-                                                }}
-                                            </p>
-                                            <p
-                                                class="text-sm text-muted-foreground"
-                                            >
-                                                {{
-                                                    form.is_active
-                                                        ? 'El usuario está activo en el sistema'
-                                                        : 'El usuario está inactivo en el sistema'
-                                                }}
-                                            </p>
-                                        </div>
-                                    </Label>
-                                </div>
-                                <InputError :message="form.errors.is_active" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem
+                                            :value="destino.id"
+                                            v-for="destino in destinos"
+                                            :key="destino.id"
+                                        >
+                                            {{ destino.nombre }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <InputError :message="form.errors.destino_id" />
                             </div>
                         </div>
                         <div class="flex justify-end gap-2">
@@ -213,17 +364,17 @@ const submit = () => {
                                 variant="outline"
                                 type="button"
                                 class="mt-4"
-                                :tabindex="4"
+                                :tabindex="6"
                                 data-test="cancel-button"
                             >
-                                <Link :href="usuarios.index().url">
+                                <Link :href="movimientos.index().url">
                                     Cancelar
                                 </Link>
                             </Button>
                             <Button
                                 type="submit"
                                 class="mt-4"
-                                :tabindex="4"
+                                :tabindex="7"
                                 :disabled="form.processing"
                                 data-test="login-button"
                             >

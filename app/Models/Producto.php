@@ -15,14 +15,10 @@ class Producto extends Model
         'nombre',
         'descripcion',
         'categoria',
-        'costo_promedio',
-        'precio_venta',
         'activo',
     ];
 
     protected $casts = [
-        'costo_promedio' => 'decimal:2',
-        'precio_venta' => 'decimal:2',
         'activo' => 'boolean',
     ];
 

@@ -14,6 +14,7 @@ import {
 import { dashboard } from '@/routes';
 import destinos from '@/routes/destinos';
 import inventarioTienda from '@/routes/inventarioTienda';
+import movimientos from '@/routes/movimientos';
 import productos from '@/routes/productos';
 import tiendas from '@/routes/tiendas';
 import usuarios from '@/routes/usuarios';
@@ -25,6 +26,7 @@ import {
     Package,
     ShoppingBasket,
     Store,
+    Truck,
     Users,
 } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
@@ -59,6 +61,11 @@ const mainNavItems: NavItem[] = [
         title: 'Destinos',
         href: destinos.index().url,
         icon: MapPin,
+    },
+    {
+        title: 'Movimientos',
+        href: movimientos.index().url,
+        icon: Truck,
     },
 ];
 

@@ -51,7 +51,7 @@ defineProps<{
                         :tabindex="1"
                         autocomplete="name"
                         name="name"
-                        placeholder="Usuario"
+                        placeholder="Nombre de Usuario"
                     />
                     <InputError :message="errors.name" />
                 </div>

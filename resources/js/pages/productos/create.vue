@@ -31,8 +31,6 @@ const form = useForm({
     nombre: '',
     descripcion: '',
     categoria: '',
-    costo_promedio: 0,
-    precio_venta: 0,
     activo: isActive.value,
 });
 
@@ -96,38 +94,6 @@ const submit = () => {
                                     maxlength="100"
                                 />
                                 <InputError :message="form.errors.categoria" />
-                            </div>
-                            <div class="grid gap-2">
-                                <Label for="nombre">Costo Promedio</Label>
-                                <Input
-                                    id="costo_promedio"
-                                    type="number"
-                                    v-model="form.costo_promedio"
-                                    autofocus
-                                    :tabindex="3"
-                                    name="costo_promedio"
-                                    step="0.01"
-                                    placeholder="Costo promedio del producto"
-                                />
-                                <InputError
-                                    :message="form.errors.costo_promedio"
-                                />
-                            </div>
-                            <div class="grid gap-2">
-                                <Label for="nombre">Precio de Venta</Label>
-                                <Input
-                                    id="precio_venta"
-                                    type="number"
-                                    v-model="form.precio_venta"
-                                    autofocus
-                                    :tabindex="4"
-                                    name="precio_venta"
-                                    step="0.01"
-                                    placeholder="Precio de venta del producto"
-                                />
-                                <InputError
-                                    :message="form.errors.precio_venta"
-                                />
                             </div>
 
                             <div class="grid gap-2">

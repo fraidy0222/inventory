@@ -5,7 +5,7 @@ import type { User } from '@/types';
 import { computed } from 'vue';
 
 interface Props {
-    user: User;
+    user: User | null;
     showEmail?: boolean;
 }
 

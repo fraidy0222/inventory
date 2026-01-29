@@ -16,8 +16,6 @@ return new class extends Migration
             $table->string('nombre', 150);
             $table->text('descripcion')->nullable();
             $table->string('categoria', 100)->nullable();
-            $table->decimal('costo_promedio', 10, 2)->default(0);
-            $table->decimal('precio_venta', 10, 2)->default(0);
             $table->boolean('activo')->default(true);
             $table->timestamps();
         });

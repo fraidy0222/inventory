@@ -20,22 +20,6 @@ export const columns: ColumnDef<Producto>[] = [
             );
         },
     },
-    {
-        accessorKey: 'costo_promedio',
-        header: 'Costo Promedio',
-        cell: ({ row }) => {
-            const costo = parseFloat(row.getValue('costo_promedio'));
-            return `$${costo.toFixed(2)}`;
-        },
-    },
-    {
-        accessorKey: 'precio_venta',
-        header: 'Precio Venta',
-        cell: ({ row }) => {
-            const precio = parseFloat(row.getValue('precio_venta'));
-            return `$${precio.toFixed(2)}`;
-        },
-    },
 
     {
         accessorKey: 'descripcion',

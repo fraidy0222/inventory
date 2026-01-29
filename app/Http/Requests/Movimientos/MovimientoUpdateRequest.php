@@ -5,7 +5,7 @@ namespace App\Http\Requests\Movimientos;
 use App\Models\InventarioTienda;
 use Illuminate\Foundation\Http\FormRequest;
 
-class MovimientoStoreRequest extends FormRequest
+class MovimientoUpdateRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.

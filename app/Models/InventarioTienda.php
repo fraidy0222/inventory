@@ -41,4 +41,10 @@ class InventarioTienda extends Model implements Auditable
     {
         return $this->hasMany(Movimiento::class);
     }
+
+    public function actualizarCantidad($diferencia)
+    {
+        $this->cantidad += $diferencia;
+        $this->save();
+    }
 }

@@ -140,7 +140,6 @@ const submit = () => {
 
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
-        {{ inventario }}
         <Head
             :title="
                 props.inventario

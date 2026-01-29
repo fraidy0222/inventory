@@ -25,8 +25,6 @@ class ProductosStoreRequest extends FormRequest
             'nombre' => 'required|string|max:150|unique:productos,nombre',
             'descripcion' => 'nullable|string',
             'categoria' => 'nullable|string|max:100',
-            'costo_promedio' => 'nullable|numeric|min:0',
-            'precio_venta' => 'nullable|numeric|min:0',
             'activo' => 'nullable|boolean',
         ];
     }
@@ -38,10 +36,6 @@ class ProductosStoreRequest extends FormRequest
             'nombre.max' => 'El nombre debe tener un máximo de 150 caracteres',
             'nombre.unique' => 'El nombre ya existe',
             'categoria.max' => 'La categoría debe tener un máximo de 100 caracteres',
-            'costo_promedio.numeric' => 'El costo promedio debe ser un número',
-            'costo_promedio.min' => 'El costo promedio no puede ser negativo',
-            'precio_venta.numeric' => 'El precio de venta debe ser un número',
-            'precio_venta.min' => 'El precio de venta no puede ser negativo',
         ];
     }
 }

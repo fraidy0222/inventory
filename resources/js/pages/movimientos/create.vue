@@ -2,8 +2,18 @@
 import ProductoController from '@/actions/App/Http/Controllers/ProductoController';
 import InputError from '@/components/InputError.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -14,13 +24,21 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import AppLayout from '@/layouts/AppLayout.vue';
 import movimientos from '@/routes/movimientos';
 import type { BreadcrumbItem, Destino, Producto, Tienda, User } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import axios from 'axios';
-import { AlertCircleIcon } from 'lucide-vue-next';
-import { ref, watch } from 'vue';
+import { AlertCircleIcon, CheckIcon } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 
 const props = defineProps<{
@@ -37,6 +55,15 @@ const props = defineProps<{
 // Estado reactivo
 const productosFiltrados = ref<Producto[]>(props.productos);
 const cargandoProductos = ref(false);
+
+// Estado para control de inventario y transferencias
+const inventarioDisponible = ref<number>(0);
+const showTransferModal = ref(false);
+const transferOptions = ref<any[]>([]);
+const checkingStock = ref(false);
+const transferring = ref(false);
+const cantidadTransferir = ref<number>(0);
+const tiendaOrigenSeleccionada = ref<string>('');
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -59,6 +86,33 @@ const form = useForm({
     usuario_id: props.auth.user.id.toString(), // Usuario autenticado
     tienda_id: '',
     inventario_tienda_id: '',
+    tienda_relacionada_id: '',
+});
+
+// Transferencia a otra tienda
+const esTransferenciaTienda = ref(false);
+
+const toggleTransferMode = (checked: boolean) => {
+    esTransferenciaTienda.value = checked;
+    if (checked) {
+        form.destino_id = '';
+    } else {
+        form.tienda_relacionada_id = '';
+    }
+};
+
+const tiendasDisponiblesTransferencia = computed(() => {
+    return props.tiendas.filter((t) => t.id.toString() !== form.tienda_id);
+});
+
+// Calcular déficit
+const deficit = computed(() => {
+    const traslados = parseFloat(form.traslados?.toString() || '0');
+    const venta_diaria = parseFloat(form.venta_diaria?.toString() || '0');
+    const disponible = inventarioDisponible.value;
+    const totalRequerido = traslados + venta_diaria;
+
+    return totalRequerido > disponible ? totalRequerido - disponible : 0;
 });
 
 // Función para cargar productos que están en el inventario de la tienda
@@ -115,18 +169,90 @@ watch(
                     `/api/movimientos/inventario/${tiendaId}/${productoId}`,
                 );
                 form.inventario_tienda_id = response.data.id.toString();
+                inventarioDisponible.value = response.data.cantidad;
             } catch (error) {
                 console.error('Error al obtener inventario:', error);
                 form.inventario_tienda_id = '';
+                inventarioDisponible.value = 0;
                 toast.error(
                     'No se encontró inventario para esta combinación de tienda y producto',
                 );
             }
         } else {
             form.inventario_tienda_id = '';
+            inventarioDisponible.value = 0;
         }
     },
 );
+
+const checkStock = async () => {
+    if (!form.producto_id) return;
+
+    try {
+        checkingStock.value = true;
+        const response = await axios.get(
+            `/api/movimientos/check-stock/${form.producto_id}`,
+            {
+                params: { exclude_tienda_id: form.tienda_id },
+            },
+        );
+        transferOptions.value = response.data;
+        showTransferModal.value = true;
+    } catch (error) {
+        toast.error('Error al verificar stock en otras tiendas');
+    } finally {
+        checkingStock.value = false;
+    }
+};
+
+const iniciarTransferencia = (
+    tiendaOrigenId: string,
+    stockDisponible: number,
+) => {
+    tiendaOrigenSeleccionada.value = tiendaOrigenId;
+    // Por defecto sugerimos el déficit, o todo el stock si no alcanza
+    const falta = deficit.value;
+    cantidadTransferir.value =
+        stockDisponible >= falta ? falta : stockDisponible;
+};
+
+const confirmarTransferencia = async () => {
+    if (!tiendaOrigenSeleccionada.value || cantidadTransferir.value <= 0)
+        return;
+
+    try {
+        transferring.value = true;
+        await axios.post('/api/movimientos/transfer-and-use', {
+            source_tienda_id: tiendaOrigenSeleccionada.value,
+            target_tienda_id: form.tienda_id,
+            producto_id: form.producto_id,
+            cantidad_transferir: cantidadTransferir.value,
+            movimiento_data: form.data(),
+        });
+
+        toast.success('Transferencia realizada y movimiento registrado');
+        // Redirigir
+        window.location.href = movimientos.index().url;
+    } catch (error: any) {
+        console.error(error);
+        if (error.response && error.response.status === 422) {
+            const errors = error.response.data.errors;
+            if (errors.cantidad_transferir) {
+                toast.error(errors.cantidad_transferir[0]);
+            } else if (errors.movimiento_error) {
+                toast.error(errors.movimiento_error[0]);
+            } else {
+                toast.error(
+                    'Error de validación al realizar la transferencia.',
+                );
+            }
+        } else {
+            toast.error('Error al realizar la transferencia');
+        }
+    } finally {
+        transferring.value = false;
+    }
+};
 
 const submit = () => {
     form.post('/movimientos', {
@@ -277,6 +403,7 @@ const submit = () => {
                                     id="entradas"
                                     type="number"
                                     v-model="form.entradas"
+                                    @blur="form.entradas = form.entradas || 0"
                                     autofocus
                                     :tabindex="3"
                                     name="entradas"
@@ -292,6 +419,7 @@ const submit = () => {
                                     id="salidas"
                                     type="number"
                                     v-model="form.salidas"
+                                    @blur="form.salidas = form.salidas || 0"
                                     autofocus
                                     :tabindex="4"
                                     name="salidas"
@@ -307,6 +435,7 @@ const submit = () => {
                                     id="traslados"
                                     type="number"
                                     v-model="form.traslados"
+                                    @blur="form.traslados = form.traslados || 0"
                                     autofocus
                                     :tabindex="5"
                                     name="traslados"
@@ -321,6 +450,10 @@ const submit = () => {
                                     id="venta_diaria"
                                     type="number"
                                     v-model="form.venta_diaria"
+                                    @blur="
+                                        form.venta_diaria =
+                                            form.venta_diaria || 0
+                                    "
                                     autofocus
                                     :tabindex="5"
                                     name="venta_diaria"
@@ -332,13 +465,34 @@ const submit = () => {
                                 />
                             </div>
 
+                            <!-- Sección de Destino / Transferencia -->
                             <div class="grid gap-2">
-                                <Label for="destino_id">Destino</Label>
+                                <Label>Tipo de Movimiento (Destino)</Label>
+                                <div class="flex items-center space-x-2">
+                                    <Checkbox
+                                        id="mode-transfer"
+                                        v-model="esTransferenciaTienda"
+                                        @update:checked="toggleTransferMode"
+                                    />
+                                    <Label for="mode-transfer">
+                                        {{
+                                            esTransferenciaTienda
+                                                ? 'Transferir a otra Tienda'
+                                                : 'Salida a Destino Externo'
+                                        }}
+                                    </Label>
+                                </div>
+                            </div>
 
+                            <div
+                                class="grid gap-2"
+                                v-if="!esTransferenciaTienda"
+                            >
+                                <Label for="destino_id">Destino</Label>
                                 <Select
                                     name="destino_id"
                                     v-model="form.destino_id"
-                                    :tabindex="1"
+                                    :tabindex="6"
                                 >
                                     <SelectTrigger class="w-full">
                                         <SelectValue
@@ -347,7 +501,7 @@ const submit = () => {
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem
-                                            :value="destino.id"
+                                            :value="destino.id.toString()"
                                             v-for="destino in destinos"
                                             :key="destino.id"
                                         >
@@ -356,6 +510,67 @@ const submit = () => {
                                     </SelectContent>
                                 </Select>
                                 <InputError :message="form.errors.destino_id" />
+                            </div>
+
+                            <div class="grid gap-2" v-else>
+                                <Label for="tienda_relacionada_id"
+                                    >Tienda Destino</Label
+                                >
+                                <Select
+                                    name="tienda_relacionada_id"
+                                    v-model="form.tienda_relacionada_id"
+                                    :tabindex="6"
+                                >
+                                    <SelectTrigger class="w-full">
+                                        <SelectValue
+                                            placeholder="Seleccione tienda destino"
+                                        />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem
+                                            :value="tienda.id.toString()"
+                                            v-for="tienda in tiendasDisponiblesTransferencia"
+                                            :key="tienda.id"
+                                        >
+                                            {{ tienda.nombre }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <InputError
+                                    :message="form.errors.tienda_relacionada_id"
+                                />
+                            </div>
+
+                            <!-- Alert and Button for Stock Transfer -->
+                            <div class="md:col-span-2" v-if="deficit > 0">
+                                <Alert variant="destructive">
+                                    <AlertCircleIcon class="h-4 w-4" />
+                                    <AlertTitle
+                                        >Inventario Insuficiente</AlertTitle
+                                    >
+                                    <AlertDescription
+                                        class="flex flex-col gap-2"
+                                    >
+                                        <p>
+                                            La cantidad solicitada excede el
+                                            inventario disponible en esta
+                                            tienda. (Faltan: {{ deficit }})
+                                        </p>
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            class="mt-2 w-fit"
+                                            @click="checkStock"
+                                            :disabled="checkingStock"
+                                        >
+                                            <Spinner
+                                                v-if="checkingStock"
+                                                class="mr-2 h-4 w-4"
+                                            />
+                                            Buscar en otras tiendas
+                                        </Button>
+                                    </AlertDescription>
+                                </Alert>
                             </div>
                         </div>
                         <div class="flex justify-end gap-2">
@@ -386,5 +601,109 @@ const submit = () => {
                 </CardContent>
             </Card>
         </div>
+
+        <Dialog v-model:open="showTransferModal">
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Stock en otras tiendas</DialogTitle>
+                    <DialogDescription>
+                        Seleccione una tienda para transferir el stock faltante.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div class="py-4">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Tienda</TableHead>
+                                <TableHead>Disponible</TableHead>
+                                <TableHead></TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            <TableRow
+                                v-for="store in transferOptions"
+                                :key="store.tienda_id"
+                            >
+                                <TableCell>{{ store.tienda_nombre }}</TableCell>
+                                <TableCell>
+                                    <Badge variant="outline">{{
+                                        store.cantidad
+                                    }}</Badge>
+                                </TableCell>
+                                <TableCell>
+                                    <Button
+                                        v-if="
+                                            store.tienda_id !==
+                                            tiendaOrigenSeleccionada
+                                        "
+                                        size="sm"
+                                        variant="outline"
+                                        @click.prevent="
+                                            iniciarTransferencia(
+                                                store.tienda_id,
+                                                store.cantidad,
+                                            )
+                                        "
+                                    >
+                                        Seleccionar
+                                    </Button>
+                                    <Button
+                                        v-else
+                                        size="sm"
+                                        class="w-full text-green-500 hover:text-green-600"
+                                        variant="outline"
+                                    >
+                                        <CheckIcon />
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                            <TableRow v-if="transferOptions.length === 0">
+                                <TableCell
+                                    colspan="3"
+                                    class="text-center text-muted-foreground"
+                                >
+                                    No se encontró stock en otras tiendas.
+                                </TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+
+                    <div
+                        v-if="tiendaOrigenSeleccionada"
+                        class="mt-4 rounded-md bg-muted p-4"
+                    >
+                        <Label>Cantidad a transferir:</Label>
+                        <Input
+                            type="number"
+                            v-model="cantidadTransferir"
+                            class="mt-1"
+                            :min="0.01"
+                            :max="deficit"
+                        />
+                        <p class="mt-1 text-xs text-muted-foreground">
+                            Se transferirá de la tienda seleccionada a la actual
+                            y se aplicará el movimiento.
+                        </p>
+                    </div>
+                </div>
+
+                <DialogFooter>
+                    <Button
+                        variant="secondary"
+                        @click="showTransferModal = false"
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        @click="confirmarTransferencia"
+                        :disabled="!tiendaOrigenSeleccionada || transferring"
+                    >
+                        <Spinner v-if="transferring" class="mr-2 h-4 w-4" />
+                        Transferir y Guardar
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </AppLayout>
 </template>

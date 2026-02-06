@@ -149,6 +149,8 @@ export interface RegistroMovimiento {
     venta_diaria: number;
     destino_id: number;
     destino_nombre: string;
+    tienda_relacionada_id?: number;
+    tienda_relacionada_nombre?: string;
     usuario_id: number;
     usuario_nombre: string;
     inventario_actual: number;

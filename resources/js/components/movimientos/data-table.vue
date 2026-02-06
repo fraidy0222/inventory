@@ -131,7 +131,9 @@ const table = useVueTable({
                                                 <TableHead
                                                     >Venta Diaria</TableHead
                                                 >
-                                                <TableHead>Destino</TableHead>
+                                                <TableHead
+                                                    >Destino / Origen</TableHead
+                                                >
                                                 <TableHead>Usuario</TableHead>
                                                 <TableHead
                                                     >Inventario
@@ -161,9 +163,47 @@ const table = useVueTable({
                                                 <TableCell>{{
                                                     registro.venta_diaria
                                                 }}</TableCell>
-                                                <TableCell>{{
-                                                    registro.destino_nombre
-                                                }}</TableCell>
+                                                <TableCell>
+                                                    <span
+                                                        v-if="
+                                                            registro.destino_nombre
+                                                        "
+                                                        >{{
+                                                            registro.destino_nombre
+                                                        }}</span
+                                                    >
+                                                    <span
+                                                        v-else-if="
+                                                            registro.tienda_relacionada_nombre
+                                                        "
+                                                        class="text-blue-600"
+                                                    >
+                                                        <span
+                                                            v-if="
+                                                                registro.entradas >
+                                                                0
+                                                            "
+                                                            >De:
+                                                            {{
+                                                                registro.tienda_relacionada_nombre
+                                                            }}</span
+                                                        >
+                                                        <span
+                                                            v-else-if="
+                                                                registro.traslados >
+                                                                0
+                                                            "
+                                                            >Para:
+                                                            {{
+                                                                registro.tienda_relacionada_nombre
+                                                            }}</span
+                                                        >
+                                                        <span v-else>{{
+                                                            registro.tienda_relacionada_nombre
+                                                        }}</span>
+                                                    </span>
+                                                    <span v-else>-</span>
+                                                </TableCell>
                                                 <TableCell>{{
                                                     registro.usuario_nombre
                                                 }}</TableCell>

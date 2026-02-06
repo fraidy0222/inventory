@@ -45,5 +45,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         '/api/movimientos/productos-en-tienda/{tiendaId}',
         [MovimientoController::class, 'getProductosEnTienda']
     );
+    Route::get(
+        '/api/movimientos/check-stock/{productoId}',
+        [MovimientoController::class, 'checkStockAvailability']
+    );
+    Route::post(
+        '/api/movimientos/transfer-and-use',
+        [MovimientoController::class, 'transferAndUse']
+    );
 });
 require __DIR__ . '/settings.php';

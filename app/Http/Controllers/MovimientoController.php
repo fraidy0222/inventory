@@ -11,6 +11,8 @@ use App\Models\Producto;
 use App\Models\Tienda;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class MovimientoController extends Controller
@@ -29,7 +31,8 @@ class MovimientoController extends Controller
             'inventario_tienda.tienda',
             'destino',
             'producto',
-            'usuario'
+            'usuario',
+            'tienda_relacionada'
         ]);
 
         // Aplicar filtros
@@ -111,7 +114,9 @@ class MovimientoController extends Controller
                 'traslados' => $item->traslados,
                 'venta_diaria' => $item->venta_diaria,
                 'destino_id' => $item->destino_id,
-                'destino_nombre' => $item->destino->nombre,
+                'destino_nombre' => $item->destino->nombre ?? '',
+                'tienda_relacionada_id' => $item->tienda_relacionada_id,
+                'tienda_relacionada_nombre' => $item->tienda_relacionada->nombre ?? '',
                 'usuario_id' => $item->usuario_id,
                 'usuario_nombre' => $item->usuario->name,
                 'inventario_actual' => $item->inventario_tienda->cantidad,
@@ -157,7 +162,7 @@ class MovimientoController extends Controller
             'destinos' => $destinos,
             'usuarios' => $usuarios,
             'auth' => [
-                'user' => auth()->user(),
+                'user' => Auth::user(),
             ],
         ]);
     }
@@ -204,10 +209,42 @@ class MovimientoController extends Controller
      */
     public function store(MovimientoStoreRequest $request)
     {
+        return DB::transaction(function () use ($request) {
+            $data = $request->validated();
+            $traslados = $data['traslados'] ?? 0;
+            $tiendaRelacionadaId = $data['tienda_relacionada_id'] ?? null;
 
-        Movimiento::create($request->validated());
+            // 1. Crear el movimiento original (Salida/Traslado desde origen)
+            $movimientoOrigen = Movimiento::create($data);
 
-        return to_route('movimientos.index');
+            // 2. Si es un traslado a otra tienda, crear la entrada en la tienda destino
+            if ($traslados > 0 && $tiendaRelacionadaId) {
+                // Obtener datos necesarios
+                $productoId = $data['producto_id'];
+                $usuarioId = Auth::id(); // O el usuario que inició la acción
+
+                // Buscar o crear el inventario en la tienda destino
+                $inventarioDestino = InventarioTienda::firstOrCreate([
+                    'tienda_id' => $tiendaRelacionadaId,
+                    'producto_id' => $productoId,
+                ], ['cantidad' => 0, 'cantidad_minima' => 0, 'cantidad_maxima' => 0]);
+
+                // Crear el movimiento de entrada en la tienda destino
+                Movimiento::create([
+                    'inventario_tienda_id' => $inventarioDestino->id,
+                    'producto_id' => $productoId,
+                    'usuario_id' => $usuarioId,
+                    'entradas' => $traslados,
+                    'salidas' => 0,
+                    'traslados' => 0,
+                    'venta_diaria' => 0,
+                    'tienda_relacionada_id' => $movimientoOrigen->inventario_tienda->tienda_id, // Referencia cruzada
+                    'destino_id' => null,
+                ]);
+            }
+
+            return to_route('movimientos.index');
+        });
     }
 
     /**
@@ -267,15 +304,20 @@ class MovimientoController extends Controller
                 'tienda_nombre' => $movimiento->inventario_tienda->tienda->nombre,
                 'producto_id' => $movimiento->producto_id,
                 'producto_nombre' => $movimiento->producto->nombre,
-                'destino_id' => $movimiento->destino_id,
-                'destino_nombre' => $movimiento->destino->nombre,
+                'destino_id' => $movimiento->destino_id ?? '',
+                'destino_nombre' => $movimiento->destino->nombre ?? '',
                 'usuario_id' => $movimiento->usuario_id,
                 'usuario_nombre' => $movimiento->usuario->name,
                 'entradas' => (float) $movimiento->entradas,
                 'salidas' => (float) $movimiento->salidas,
                 'traslados' => (float) $movimiento->traslados,
                 'venta_diaria' => (float) $movimiento->venta_diaria,
-                'inventario_actual' => $movimiento->inventario_actual,
+                'inventario_tienda' => [
+                    'id' => $movimiento->inventario_tienda->id,
+                    'tienda_id' => $movimiento->inventario_tienda->tienda_id,
+                    'producto_id' => $movimiento->inventario_tienda->producto_id,
+                    'cantidad' => $movimiento->inventario_tienda->cantidad,
+                ],
                 'created_at' => $movimiento->created_at?->format('d/m/Y'),
                 'updated_at' => $movimiento->updated_at?->format('d/m/Y'),
             ],
@@ -284,6 +326,9 @@ class MovimientoController extends Controller
             'destinos' => $destinos,
             'usuarios' => $usuarios,
             'inventariosTienda' => $inventariosTienda,
+            'auth' => [
+                'user' => Auth::user(),
+            ],
         ]);
     }
 
@@ -302,6 +347,119 @@ class MovimientoController extends Controller
      */
     public function destroy(Movimiento $movimiento)
     {
-        //
+        $movimiento->delete();
+
+        return to_route('movimientos.index');
+    }
+    /**
+     * Check stock availability in other stores
+     */
+    public function checkStockAvailability($productoId, Request $request)
+    {
+        $excludeTiendaId = $request->input('exclude_tienda_id');
+
+        $stocks = InventarioTienda::where('producto_id', $productoId)
+            ->where('tienda_id', '!=', $excludeTiendaId)
+            ->where('cantidad', '>', 0)
+            ->with('tienda:id,nombre')
+            ->get(['tienda_id', 'cantidad'])
+            ->map(function ($inv) {
+                return [
+                    'tienda_id' => $inv->tienda_id,
+                    'tienda_nombre' => $inv->tienda->nombre,
+                    'cantidad' => $inv->cantidad,
+                ];
+            });
+
+        return response()->json($stocks);
+    }
+
+    /**
+     * Transfer stock from one store to another and then use it.
+     */
+    public function transferAndUse(Request $request)
+    {
+        $request->validate([
+            'source_tienda_id' => 'required|exists:tiendas,id',
+            'target_tienda_id' => 'required|exists:tiendas,id',
+            'producto_id' => 'required|exists:productos,id',
+            'cantidad_transferir' => 'required|numeric|min:0.01',
+            'movimiento_data' => 'required|array',
+        ]);
+
+        $sourceTiendaId = $request->input('source_tienda_id');
+        $targetTiendaId = $request->input('target_tienda_id');
+        $productoId = $request->input('producto_id');
+        $cantidadTransferir = $request->input('cantidad_transferir');
+        $movimientoData = $request->input('movimiento_data');
+
+        return DB::transaction(function () use ($sourceTiendaId, $targetTiendaId, $productoId, $cantidadTransferir, $movimientoData) {
+            // 1. Get Inventory IDs
+            $sourceInventario = InventarioTienda::where('tienda_id', $sourceTiendaId)
+                ->where('producto_id', $productoId)
+                ->firstOrFail();
+
+            $targetInventario = InventarioTienda::firstOrCreate([
+                'tienda_id' => $targetTiendaId,
+                'producto_id' => $productoId,
+            ], ['cantidad' => 0, 'cantidad_minima' => 0, 'cantidad_maxima' => 0]);
+
+            // Check if source has enough stock
+            if ($sourceInventario->cantidad < $cantidadTransferir) {
+                return response()->json([
+                    'errors' => [
+                        'cantidad_transferir' => ["La tienda de origen no tiene suficiente stock ({$sourceInventario->cantidad}) para transferir {$cantidadTransferir}."]
+                    ]
+                ], 422);
+            }
+
+            // Check if target has enough stock (current + transfer) for the requested usage
+            $trasladosSolicitados = $movimientoData['traslados'] ?? 0;
+            $ventaDiariaSolicitada = $movimientoData['venta_diaria'] ?? 0;
+            $totalSalida = $trasladosSolicitados + $ventaDiariaSolicitada;
+            $stockProyectado = $targetInventario->cantidad + $cantidadTransferir;
+
+            if (round($totalSalida, 2) > round($stockProyectado, 2)) {
+                return response()->json([
+                    'errors' => [
+                        'movimiento_error' => ["La cantidad disponible en la tienda destino ({$stockProyectado} después de transferencia) es insuficiente para realizar los traslados y ventas solicitados ({$totalSalida})."]
+                    ]
+                ], 422);
+            }
+
+            // 2. Create Transfer Out (Source Store)
+            Movimiento::create([
+                'inventario_tienda_id' => $sourceInventario->id,
+                'producto_id' => $productoId,
+                'usuario_id' => Auth::id(),
+                'destino_id' => null,
+                'entradas' => 0,
+                'salidas' => 0,
+                'traslados' => $cantidadTransferir,
+                'venta_diaria' => 0,
+                'tienda_relacionada_id' => $targetTiendaId,
+            ]);
+
+            // 3. Create Transfer In (Target Store)
+            Movimiento::create([
+                'inventario_tienda_id' => $targetInventario->id,
+                'producto_id' => $productoId,
+                'usuario_id' => Auth::id(),
+                'destino_id' => null,
+                'entradas' => $cantidadTransferir,
+                'salidas' => 0,
+                'traslados' => 0,
+                'venta_diaria' => 0,
+                'tienda_relacionada_id' => $sourceTiendaId,
+            ]);
+
+            // 4. Create the final requested usage Movement (Target Store)
+            $movimientoData['inventario_tienda_id'] = $targetInventario->id;
+            $movimientoData['usuario_id'] = Auth::id();
+
+            Movimiento::create($movimientoData);
+
+            return response()->json(['message' => 'Transferencia y movimiento realizados con éxito.']);
+        });
     }
 }

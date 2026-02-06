@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Movimiento extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
+        'existencias',
         'entradas',
         'salidas',
         'traslados',
@@ -16,9 +20,10 @@ class Movimiento extends Model
         'destino_id',
         'usuario_id',
         'inventario_tienda_id',
+        'tienda_relacionada_id',
     ];
 
-    protected $appends = ['inventario_actual'];
+    // protected $appends = ['inventario_actual']; // Removed - no accessor defined
 
     public function producto(): BelongsTo
     {
@@ -40,38 +45,68 @@ class Movimiento extends Model
         return $this->belongsTo(InventarioTienda::class);
     }
 
-    // public function getInventarioActualAttribute(): int
-    // {
-    //     if (!$this->inventario_tienda) {
-    //         return 0;
-    //     }
-
-    //     return $this->inventario_tienda->cantidad - $this->traslados - $this->venta_diaria;
-    // }
+    public function tienda_relacionada(): BelongsTo
+    {
+        return $this->belongsTo(Tienda::class, 'tienda_relacionada_id');
+    }
 
     protected static function booted()
     {
         static::created(function ($movimiento) {
-            $diferencia = - ($movimiento->traslados + $movimiento->venta_diaria);
+            $totalEntrada = $movimiento->entradas;
+            $totalSalida = $movimiento->traslados + $movimiento->venta_diaria;
+            $diferencia = $totalEntrada - $totalSalida;
+
             $movimiento->inventario_tienda->cantidad += $diferencia;
             $movimiento->inventario_tienda->save();
         });
 
         static::updated(function ($movimiento) {
+            if ($movimiento->isDirty('inventario_tienda_id')) {
+                // 1. Restaurar cantidad al inventario anterior
+                $originalInventarioId = $movimiento->getOriginal('inventario_tienda_id');
+                $originalEntrada = $movimiento->getOriginal('entradas');
+                $originalSalida = $movimiento->getOriginal('traslados') + $movimiento->getOriginal('venta_diaria');
+                $originalNeto = $originalEntrada - $originalSalida;
 
-            // Si necesitas manejar actualizaciones, calcula la diferencia
-            $diferenciaOriginal = $movimiento->getOriginal('traslados') + $movimiento->getOriginal('venta_diaria');
-            $diferenciaNueva = $movimiento->traslados + $movimiento->venta_diaria;
-            $diferencia = $diferenciaOriginal - $diferenciaNueva;
+                $oldInventario = InventarioTienda::find($originalInventarioId);
+                if ($oldInventario) {
+                    $oldInventario->cantidad -= $originalNeto; // Remove the effect of the old movement
+                    $oldInventario->save();
+                }
 
-            $movimiento->inventario_tienda->cantidad += $diferencia;
-            $movimiento->inventario_tienda->save();
+                // 2. Aplicar al nuevo inventario
+                // Nota: $movimiento->inventario_tienda ya apunta al nuevo registro debido al cambio de ID
+                $nuevoEntrada = $movimiento->entradas;
+                $nuevoSalida = $movimiento->traslados + $movimiento->venta_diaria;
+                $nuevoNeto = $nuevoEntrada - $nuevoSalida;
+
+                $movimiento->inventario_tienda->cantidad += $nuevoNeto;
+                $movimiento->inventario_tienda->save();
+            } else {
+                // Lógica estándar cuando no cambia el inventario
+                $originalEntrada = $movimiento->getOriginal('entradas');
+                $originalSalida = $movimiento->getOriginal('traslados') + $movimiento->getOriginal('venta_diaria');
+                $originalNeto = $originalEntrada - $originalSalida;
+
+                $nuevoEntrada = $movimiento->entradas;
+                $nuevoSalida = $movimiento->traslados + $movimiento->venta_diaria;
+                $nuevoNeto = $nuevoEntrada - $nuevoSalida;
+
+                $diferencia = $nuevoNeto - $originalNeto;
+
+                $movimiento->inventario_tienda->cantidad += $diferencia;
+                $movimiento->inventario_tienda->save();
+            }
         });
 
         static::deleted(function ($movimiento) {
             // Restaurar la cantidad si se elimina el movimiento
-            $diferencia = $movimiento->traslados + $movimiento->venta_diaria;
-            $movimiento->inventario_tienda->cantidad += $diferencia;
+            $totalEntrada = $movimiento->entradas;
+            $totalSalida = $movimiento->traslados + $movimiento->venta_diaria;
+            $neto = $totalEntrada - $totalSalida;
+
+            $movimiento->inventario_tienda->cantidad -= $neto; // Reverse effect
             $movimiento->inventario_tienda->save();
         });
     }

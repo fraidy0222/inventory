@@ -39,13 +39,24 @@ class MovimientoUpdateRequest extends FormRequest
                     $ventaDiaria = $this->input('venta_diaria', 0);
                     $totalSalida = $traslados + $ventaDiaria;
 
-                    if ($totalSalida > $inventario->cantidad) {
-                        $fail("La suma de traslados ({$traslados}) y venta diaria ({$ventaDiaria}) no puede ser mayor que la cantidad disponible en inventario ({$inventario->cantidad}).");
+                    // Calcular cantidad disponible real
+                    // Si estamos editando y el inventario es el mismo, debemos sumar lo que este movimiento ya había consumido
+                    $cantidadDisponible = $inventario->cantidad;
+                    $movimiento = $this->route('movimiento');
+
+                    if ($movimiento && $movimiento->inventario_tienda_id == $value) {
+                        $usoOriginal = $movimiento->traslados + $movimiento->venta_diaria;
+                        $cantidadDisponible += $usoOriginal;
+                    }
+
+                    if (round($totalSalida, 2) > round($cantidadDisponible, 2)) {
+                        $fail("La suma de los traslados ({$traslados}) y venta diaria ({$ventaDiaria}) no puede ser mayor que la cantidad disponible en inventario ({$cantidadDisponible}).");
                     }
                 },
             ],
             'producto_id' => 'required|exists:productos,id',
-            'destino_id' => 'required|exists:destinos,id',
+            'destino_id' => 'sometimes|nullable|exists:destinos,id',
+            'tienda_relacionada_id' => 'sometimes|nullable|exists:tiendas,id',
             'usuario_id' => 'required|exists:users,id',
             'entradas' => 'nullable|numeric|min:0',
             'salidas' => 'nullable|numeric|min:0',

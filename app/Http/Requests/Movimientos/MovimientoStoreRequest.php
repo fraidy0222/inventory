@@ -37,15 +37,18 @@ class MovimientoStoreRequest extends FormRequest
 
                     $traslados = $this->input('traslados', 0);
                     $ventaDiaria = $this->input('venta_diaria', 0);
+                    // $salidas = $this->input('salidas', 0);
                     $totalSalida = $traslados + $ventaDiaria;
 
-                    if ($totalSalida > $inventario->cantidad) {
-                        $fail("La suma de traslados ({$traslados}) y venta diaria ({$ventaDiaria}) no puede ser mayor que la cantidad disponible en inventario ({$inventario->cantidad}).");
+                    // Float comparison safety
+                    if (round($totalSalida, 2) > round($inventario->cantidad, 2)) {
+                        $fail("La suma de los traslados ({$traslados}) y venta diaria ({$ventaDiaria}) no puede ser mayor que la cantidad disponible en inventario ({$inventario->cantidad}).");
                     }
                 },
             ],
             'producto_id' => 'required|exists:productos,id',
-            'destino_id' => 'required|exists:destinos,id',
+            'destino_id' => 'sometimes|nullable|exists:destinos,id',
+            'tienda_relacionada_id' => 'sometimes|nullable|exists:tiendas,id',
             'usuario_id' => 'required|exists:users,id',
             'entradas' => 'nullable|numeric|min:0',
             'salidas' => 'nullable|numeric|min:0',

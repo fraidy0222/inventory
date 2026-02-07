@@ -111,7 +111,7 @@ const breadcrumbs: BreadcrumbItem[] = [
                     />
                     <Input
                         :model-value="searchQuery"
-                        placeholder="Buscar usuarios..."
+                        placeholder="Buscar..."
                         class="pl-8"
                         @update:model-value="handleSearch"
                     />

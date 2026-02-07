@@ -164,3 +164,11 @@ export interface TiendaMovimientos {
     tienda_is_active: boolean;
     registros: RegistroMovimiento[];
 }
+
+export interface File {
+    id: number;
+    nombre: string;
+    archivo: string;
+    created_at: string;
+    updated_at: string;
+}

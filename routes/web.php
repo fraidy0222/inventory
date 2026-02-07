@@ -5,6 +5,7 @@ use App\Http\Controllers\UsersController;
 use App\Http\Controllers\TiendaController;
 use App\Http\Controllers\InventarioTiendaController;
 use App\Http\Controllers\DestinoController;
+use App\Http\Controllers\FilesController;
 use App\Http\Controllers\MovimientoController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -53,5 +54,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         '/api/movimientos/transfer-and-use',
         [MovimientoController::class, 'transferAndUse']
     );
+    Route::get('archivos/download/{fileName}', [FilesController::class, 'download'])->name('archivos.download');
+    Route::resource('archivos', FilesController::class);
 });
 require __DIR__ . '/settings.php';

@@ -12,6 +12,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import archivos from '@/routes/archivos';
 import destinos from '@/routes/destinos';
 import inventarioTienda from '@/routes/inventarioTienda';
 import movimientos from '@/routes/movimientos';
@@ -21,6 +22,7 @@ import usuarios from '@/routes/usuarios';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import {
+    File,
     LayoutGrid,
     MapPin,
     Package,
@@ -66,6 +68,11 @@ const mainNavItems: NavItem[] = [
         title: 'Movimientos',
         href: movimientos.index().url,
         icon: Truck,
+    },
+    {
+        title: 'Archivos',
+        href: archivos.index().url,
+        icon: File,
     },
 ];
 
